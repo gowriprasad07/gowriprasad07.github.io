@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gowri — Web application penetration tester</title>
+<meta name="description" content="Gowri — application security specialist based in Chennai, India. Web, API and mobile penetration testing.">
+
+<!-- Open Graph: controls how the link looks when shared on LinkedIn -->
+<meta property="og:title" content="Gowri — Web application penetration tester">
+<meta property="og:description" content="Application security specialist. Web, API and mobile penetration testing.">
+<meta property="og:type" content="profile">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<a class="skip" href="#scope">Skip to content</a>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="wordmark" href="/">Gowri</a>
+    <nav aria-label="Sections">
+      <a href="#scope">About</a>
+      <a href="#method">Capabilities</a>
+      <a href="#findings">Work</a>
+      <a href="#notes">Writing</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div class="hero-text">
+        <h1>Gowri</h1>
+        <p class="role">Web application penetration tester</p>
+        <p class="lede">
+          I break into web applications so they hold up when someone else tries.
+          Manual testing, source review, and reports your engineers can actually act on.
+        </p>
+        <div class="hero-actions">
+          <!-- EDIT: point this at your real CV file -->
+          <a class="btn" href="resume.pdf">Download CV</a>
+          <!-- EDIT: your real email -->
+          <a class="btn btn-quiet" href="mailto:you@example.com">Get in touch</a>
+        </div>
+      </div>
+
+      <figure class="exchange" aria-label="Example HTTP exchange describing this profile">
+        <pre class="req"><span class="m">GET</span> /gowri <span class="dim">HTTP/1.1</span>
+<span class="h">Host:</span> gowri.github.io
+<span class="h">Accept:</span> application/json</pre>
+        <pre class="res"><span class="dim">HTTP/1.1</span> <span class="ok">200 OK</span>
+<span class="h">Content-Type:</span> application/json
+
+{
+  <span class="k">"role"</span>: <span class="v">"Application security"</span>,
+  <span class="k">"focus"</span>: [<span class="v">"web"</span>, <span class="v">"api"</span>, <span class="v">"mobile"</span>],
+  <span class="k">"based"</span>: <span class="v">"Chennai, India"</span>,
+  <span class="k">"open_to"</span>: <span class="v">"engagements, full-time"</span>
+}</pre>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ============ ABOUT ============ -->
+  <section id="scope" class="band">
+    <div class="wrap doc">
+      <div class="margin-note">Scope</div>
+      <div class="doc-body">
+        <h2>What I do</h2>
+        <!-- EDIT: rewrite these two paragraphs in your own words. Keep them short. -->
+        <p>
+          I test web applications, APIs, and the plumbing behind them. Most of my work is
+          hands-on assessment: mapping attack surface, chaining small flaws into real impact,
+          and writing it up so the fix is obvious.
+        </p>
+        <p>
+          Automated scanners find the easy half. The half that matters — broken access control,
+          business logic you can bend, trust assumptions between services — needs someone
+          sitting with the application until it makes sense. That is the part I enjoy.
+        </p>
+        <ul class="facts">
+          <!-- EDIT: swap in your real facts. Delete rows you don't have yet. -->
+          <li><span>Based</span> Chennai, Tamil Nadu, India</li>
+          <li><span>Focus</span> Web &amp; API security, OWASP Top 10, business logic</li>
+          <li><span>Certifications</span> OSCP (in progress)</li>
+          <li><span>Availability</span> Open to engagements</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CAPABILITIES ============ -->
+  <section id="method" class="band alt">
+    <div class="wrap doc">
+      <div class="margin-note">Method</div>
+      <div class="doc-body">
+        <h2>Capabilities</h2>
+        <div class="caps">
+          <!-- EDIT: keep the groups that are true for you, delete the rest. -->
+          <div class="cap">
+            <h3>Application testing</h3>
+            <p>Authentication and session handling, access control, injection, SSRF,
+               deserialization, file upload paths, business logic abuse.</p>
+          </div>
+          <div class="cap">
+            <h3>API and services</h3>
+            <p>REST and GraphQL assessment, authorization boundaries between services,
+               token handling, rate limiting and enumeration.</p>
+          </div>
+          <div class="cap">
+            <h3>Tooling</h3>
+            <p class="tools">
+              <code>Burp Suite</code><code>ffuf</code><code>nmap</code><code>sqlmap</code><code>Nuclei</code><code>Python</code><code>Bash</code><code>Git</code>
+            </p>
+          </div>
+          <div class="cap">
+            <h3>Reporting</h3>
+            <p>Findings written for two audiences at once: a risk summary the business reads,
+               and reproduction steps an engineer can follow without asking questions.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ WORK ============ -->
+  <section id="findings" class="band">
+    <div class="wrap doc">
+      <div class="margin-note">Findings</div>
+      <div class="doc-body">
+        <h2>Selected work</h2>
+        <p class="sub">Sanitised write-ups. Client names and identifying detail removed.</p>
+
+        <!-- EDIT: replace with your own. Duplicate a block to add more.
+             Severity classes available: sev-high, sev-med, sev-low -->
+        <article class="finding">
+          <div class="finding-head">
+            <h3>Broken access control in a multi-tenant dashboard</h3>
+            <span class="sev sev-high">High</span>
+          </div>
+          <p>Object identifiers were validated for format but never for ownership, letting any
+             authenticated account read records belonging to other tenants. Reported with a
+             minimal reproduction and a suggested authorization check at the data layer.</p>
+        </article>
+
+        <article class="finding">
+          <div class="finding-head">
+            <h3>Password reset token reuse</h3>
+            <span class="sev sev-med">Medium</span>
+          </div>
+          <p>Reset tokens stayed valid after use and after a subsequent password change,
+             widening the window for account takeover from a leaked link.</p>
+        </article>
+
+        <article class="finding">
+          <div class="finding-head">
+            <h3>Stored cross-site scripting via profile fields</h3>
+            <span class="sev sev-low">Low</span>
+          </div>
+          <p>A display name field escaped output in the main view but not in an admin
+             moderation panel, putting the payload in front of a privileged user.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ WRITING ============ -->
+  <section id="notes" class="band alt">
+    <div class="wrap doc">
+      <div class="margin-note">Notes</div>
+      <div class="doc-body">
+        <h2>Writing</h2>
+        <p class="sub">Things I worked out and wanted to remember.</p>
+
+        <!-- EDIT: each post is one link. Add a new <li> per post. -->
+        <ul class="posts">
+          <li>
+            <a href="writing/ssti-explained.html">
+              <span class="post-title">How server-side template injection actually works</span>
+              <span class="post-meta">Attribute lookups, not magic strings</span>
+            </a>
+            <time datetime="2026-09-01">Sep 2026</time>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CONTACT ============ -->
+  <section id="contact" class="band">
+    <div class="wrap doc">
+      <div class="margin-note">Contact</div>
+      <div class="doc-body">
+        <h2>Get in touch</h2>
+        <p>Happy to talk about assessments, collaboration, or a role.</p>
+        <ul class="links">
+          <!-- EDIT: all four of these -->
+          <li><a href="mailto:you@example.com">you@example.com</a></li>
+          <li><a href="https://www.linkedin.com/in/your-handle">LinkedIn</a></li>
+          <li><a href="https://github.com/your-handle">GitHub</a></li>
+          <li><a href="resume.pdf">Curriculum vitae (PDF)</a></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap foot-inner">
+    <span>Built by hand. Hosted on GitHub Pages.</span>
+    <span id="year"></span>
+  </div>
+</footer>
+
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
+</script>
+</body>
+</html>
