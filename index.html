@@ -3,15 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Gowri Prasad — web security</title>
-<meta name="description" content="Gowri Prasad. Web application security. Notes on things I worked out the hard way.">
+<title>Gowri Prasad — web application security</title>
+<meta name="description" content="Gowri Prasad. Security engineer at Zoho, working on offensive and application security. Notes on web security.">
 
-<meta property="og:title" content="Gowri Prasad — web security">
-<meta property="og:description" content="Notes on web application security, written down so I don't learn them twice.">
+<meta property="og:title" content="Gowri Prasad — web application security">
+<meta property="og:description" content="Security engineer. Notes on web security, written down so I don't learn them twice.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://gowriprasad07.github.io">
+<meta property="og:image" content="https://gowriprasad07.github.io/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
 
-<link rel="icon" href="/favicon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap" rel="stylesheet">
@@ -23,7 +27,7 @@
 
 <header class="topbar">
   <div class="wrap topbar-inner">
-    <a class="wordmark" href="/">gowriprasad07</a>
+    <a class="wordmark" href="/">gp_sec</a>
     <nav aria-label="Sections">
       <a href="#whoami">Who I am</a>
       <a href="#writing">Writing</a>
@@ -42,22 +46,20 @@
         <h1>Gowri Prasad</h1>
         <p class="role">Web application security</p>
 
-        <!-- EDIT: this is the most important copy on the page. Rewrite it in your
-             own words. Say one thing you actually believe about the work. -->
         <p class="lede">
-          I break web applications for a living. The bugs I find most often
-          aren't in the code — they're in an assumption someone made about who
-          should be allowed to do what.
+          I'm a security engineer at Zoho, working on offensive and application
+          security for ManageEngine and Zoho products. Most of my time goes into
+          testing web applications, reading their code, and deciding whether a
+          reported bug is really a bug.
         </p>
         <p class="lede">
           This site is mostly notes. When something confuses me for a week and
           then finally clicks, I write it down here so I don't have to learn it
-          a second time.
+          twice.
         </p>
 
         <div class="hero-actions">
           <a class="btn" href="#writing">Read the notes</a>
-          <!-- EDIT: your real email -->
           <a class="btn btn-quiet" href="mailto:bgowriprasad@gmail.com">Say hello</a>
         </div>
       </div>
@@ -69,10 +71,12 @@
 <span class="h">Content-Type:</span> application/json
 
 {
-  <span class="k">"works_on"</span>: [<span class="v">"web"</span>, <span class="v">"api"</span>],
+  <span class="k">"role"</span>: <span class="v">"Security engineer, Zoho"</span>,
+  <span class="k">"works_on"</span>: [<span class="v">"web"</span>, <span class="v">"api"</span>, <span class="v">"code review"</span>],
   <span class="k">"based"</span>: <span class="v">"Chennai, India"</span>,
-  <span class="k">"currently"</span>: <span class="v">"OSCP, and learning Python properly"</span>,
-  <span class="k">"writes_here"</span>: <span class="v">"whenever something clicks"</span>
+  <span class="k">"certs"</span>: [<span class="v">"OSCP+"</span>],
+  <span class="k">"youtube"</span>: <span class="v">"@gp_sec"</span>,
+  <span class="k">"writes_here"</span>: <span class="v">"when something finally clicks"</span>
 }</pre>
       </figure>
     </div>
@@ -85,64 +89,71 @@
       <div class="doc-body">
         <h2>Who I am</h2>
 
-        <!-- EDIT: rewrite all of this. Keep it first person. Be specific.
-             It's fine to say what you don't know yet. -->
         <p>
-          I'm a security engineer in Chennai working mostly on web application
-          and API testing. Day to day that means sitting with an application
-          until its logic makes sense, then finding the place where that logic
-          disagrees with itself.
-        </p>
-        <p>
-          Scanners handle the obvious half. The half I care about is access
-          control, authentication flows, and business logic — the bugs you only
-          find by understanding what the application is <em>for</em>. Nobody has
-          automated that yet.
-        </p>
-        <p>
-          Right now I'm working through OSCP and rebuilding my Python from the
-          ground up. I got tired of copying payloads I couldn't explain, so I'm
-          learning to write the thing I've been attacking.
+          I've been on the security assessment team at Zoho since 2022. Day to
+          day that means web application penetration testing across our
+          products, secure code review, and vulnerability research — sitting
+          with an application until its logic makes sense, then finding the
+          place where that logic disagrees with itself.
         </p>
 
-        <!-- EDIT: your real background. Delete the company name if you'd
-             rather not disclose it — "Security engineer" alone is fine. -->
+        <p>
+          A good part of the job is bug bounty triage: reproducing what a
+          researcher reported, deciding whether it's real, scoring it, tracing
+          it back to a root cause, and then staying with it until the fix
+          actually holds. That work has taught me more than my own testing did.
+          Reproducing someone else's finding forces you to understand a system
+          you didn't choose, and often enough the more interesting bug is
+          sitting next to the one that was reported.
+        </p>
+
+        <p>
+          The rest is scripting. I write Python and Bash to take the repetitive
+          parts out of an assessment, and maintain reusable test cases so the
+          same checks don't get rebuilt from scratch every time. Automation
+          handles the predictable half. Access control, authentication flows,
+          and business logic still need somebody who understands what the
+          application is <em>for</em>.
+        </p>
+
         <h3 class="sub-head">Background</h3>
         <div class="timeline">
           <article class="role-entry">
-            <div class="role-when">2024 — now</div>
+            <div class="role-when">Sep 2022 — now</div>
             <div class="role-what">
-              <h4>Security Engineer</h4>
-              <p class="role-org">Company name, or leave this out</p>
-              <p>Web and API penetration testing across client engagements.
-                 Manual assessment, source review, and reports written so the
-                 fix is obvious to whoever has to make it.</p>
+              <h4>Member of Technical Staff — Security Engineer</h4>
+              <p class="role-org">Zoho Corporation</p>
+              <p>Offensive and application security for ManageEngine and Zoho
+                 products. Penetration testing, secure code review,
+                 vulnerability research, and bug bounty triage — CVSS scoring,
+                 root-cause analysis, coordinating remediation, verifying fixes.</p>
             </div>
           </article>
 
           <article class="role-entry">
-            <div class="role-when">2023 — 2024</div>
+            <div class="role-when">Sep 2020 — Apr 2021</div>
             <div class="role-what">
-              <h4>Previous role</h4>
-              <p class="role-org">Company name</p>
-              <p>What you actually did. One or two sentences. Concrete over
-                 impressive.</p>
+              <h4>Security Intern</h4>
+              <p class="role-org">Hyperspace IT India Pvt. Ltd.</p>
+              <p>First exposure to real assessment work, and where I learned
+                 that reading documentation carefully beats guessing.</p>
             </div>
           </article>
         </div>
 
+        <h3 class="sub-head">Certification</h3>
+        <p>OSCP+ — OffSec Certified Professional, 2026.</p>
+
         <h3 class="sub-head">What I reach for</h3>
         <p class="tools">
-          <!-- EDIT: delete anything you don't genuinely use -->
-          <code>Burp Suite</code><code>ffuf</code><code>nmap</code><code>sqlmap</code><code>Nuclei</code><code>Python</code><code>Bash</code><code>Git</code>
+          <code>Burp Suite</code><code>Nmap</code><code>Metasploit</code><code>Wireshark</code><code>Python</code><code>Bash</code><code>Linux</code><code>Windows</code>
         </p>
 
-        <!-- Optional but recommended: something that isn't security.
-             Delete if you'd rather not. It makes the page read as a person. -->
         <h3 class="sub-head">Outside work</h3>
         <p>
-          Something true and unremarkable goes here — what you read, cook, ride,
-          watch. One or two lines. Resist the urge to make it sound impressive.
+          Football, mostly. Playing it, watching it, and reading more about
+          tactics than is strictly reasonable. I'll argue about a formation for
+          longer than anyone wants me to.
         </p>
       </div>
     </div>
@@ -155,11 +166,15 @@
       <div class="doc-body">
         <h2>Writing</h2>
         <p class="sub">
-          Mostly for me. I write things down as a way of checking whether I
-          actually understood them, and it turns out I usually hadn't.
+          Mostly for me. Writing something down is how I check whether I
+          actually understood it, and it turns out I usually hadn't.
         </p>
 
-        <!-- EDIT: add a <li> per post. Newest first. -->
+        <p class="sub">
+          Some of it ends up on video instead —
+          <a href="https://www.youtube.com/@gp_sec/videos">youtube.com/@gp_sec</a>.
+        </p>
+
         <ul class="posts">
           <li>
             <a href="writing/ssti-explained.html">
@@ -169,7 +184,7 @@
             <time datetime="2026-09-01">Sep 2026</time>
           </li>
           <!--
-          Copy this block for each new post:
+          Copy this block for each new post. Newest at the top.
           <li>
             <a href="writing/your-post-slug.html">
               <span class="post-title">Title of the post</span>
@@ -189,32 +204,34 @@
       <div class="margin-note">projects</div>
       <div class="doc-body">
         <h2>Projects</h2>
-        <p class="sub">Small tools, mostly built because I got annoyed at doing something by hand.</p>
-
-        <!-- EDIT: replace with your real repos. Delete the ones you haven't
-             built yet rather than leaving them as promises. -->
-        <article class="project">
-          <div class="project-head">
-            <h3>Project name</h3>
-            <a class="repo-link" href="https://github.com/gowriprasad07/repo-name">github</a>
-          </div>
-          <p>What it does, in one or two sentences. Then why you built it —
-             the annoyance that started it. That second part is what makes
-             someone click.</p>
-          <p class="tags"><code>python</code><code>recon</code></p>
-        </article>
+        <p class="sub">Small things, mostly built because I got tired of doing something by hand.</p>
 
         <article class="project">
           <div class="project-head">
             <h3>This site</h3>
             <a class="repo-link" href="https://github.com/gowriprasad07/gowriprasad07.github.io">github</a>
           </div>
-          <p>Hand-written HTML and CSS, no framework, no build step. I'm
-             replacing it with a static site generator I'm writing in Python,
-             partly because I want the practice and partly because pasting
-             a new <code>&lt;li&gt;</code> for every post won't scale past ten.</p>
-          <p class="tags"><code>html</code><code>css</code></p>
+          <p>Hand-written HTML and CSS. No framework, no build step, no
+             dependencies to audit. I'm replacing it with a static site
+             generator I'm writing in Python — partly for the practice, partly
+             because pasting a new <code>&lt;li&gt;</code> for every post won't
+             survive past ten of them.</p>
+          <p class="tags"><code>html</code><code>css</code><code>python</code></p>
         </article>
+
+        <!--
+        Add real repos here as you publish them. Delete this comment block
+        once you have two or three.
+        <article class="project">
+          <div class="project-head">
+            <h3>Project name</h3>
+            <a class="repo-link" href="https://github.com/gowriprasad07/repo-name">github</a>
+          </div>
+          <p>What it does. Then the annoyance that made you build it — that
+             second part is what makes someone click.</p>
+          <p class="tags"><code>python</code><code>recon</code></p>
+        </article>
+        -->
       </div>
     </div>
   </section>
@@ -230,10 +247,10 @@
           working on something interesting, I'd like to hear from you.
         </p>
         <ul class="links">
-          <!-- EDIT: all of these -->
           <li><a href="mailto:bgowriprasad@gmail.com">bgowriprasad@gmail.com</a></li>
-          <li><a href="https://www.linkedin.com/in/your-handle">LinkedIn</a></li>
+          <li><a href="https://www.linkedin.com/in/gowriprasad-kb-930890157/">LinkedIn</a></li>
           <li><a href="https://github.com/gowriprasad07">GitHub</a></li>
+          <li><a href="https://www.youtube.com/@gp_sec/videos">YouTube — @gp_sec</a></li>
           <li><a href="resume.pdf">CV (PDF)</a></li>
         </ul>
       </div>
