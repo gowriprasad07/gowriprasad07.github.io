@@ -1,49 +1,61 @@
-# Personal site
+# gp_sec — personal site
 
-Static site, hand-written HTML and CSS, hosted on GitHub Pages.
+Static site. Hand-written HTML and CSS, one small script, no build step,
+no dependencies. Hosted on GitHub Pages.
 
 ## Files
 
 ```
-index.html                  the whole main page
-styles.css                  all styling for every page
-writing/ssti-explained.html example blog post — copy this to make new ones
-.nojekyll                   tells GitHub Pages to serve files as-is
-resume.pdf                  add this yourself
+index.html                 the whole main page
+styles.css                 all styling, every page
+favicon-16.png             tab icon
+favicon-32.png             tab icon
+apple-touch-icon.png       home-screen icon
+og-image.png               link-preview image (use the gp_sec logo here)
+resume.pdf                 add this yourself
+.nojekyll                  serve files as-is, no Jekyll
+writing/
+  ssti-explained.html      example post — copy this to make new ones
+  origins-and-credentials.html
 ```
 
-## Things to change before publishing
+## Adding a post
 
-Search `index.html` for `EDIT` — every spot needing your details is marked.
+1. Copy an existing file in `writing/` to `writing/your-slug.html`
+2. Change the `<title>`, `<h1>`, dateline and body
+3. In `index.html`, copy the commented `<li>` block in the `.posts` list,
+   uncomment it, and point it at the new file. Newest at the top.
 
-- [ ] Email address (appears 3 times: hero button, contact list)
-- [ ] LinkedIn URL
-- [ ] GitHub URL
-- [ ] Host line in the HTTP panel (change to your real site URL)
-- [ ] The two "What I do" paragraphs
-- [ ] The facts table (location, focus, certifications, availability)
-- [ ] Capability groups — delete any that aren't true yet
-- [ ] Tool list
-- [ ] All three findings — replace with your own, sanitised
-- [ ] Add `resume.pdf` to the repo root
-
-## Adding a blog post
-
-1. Copy `writing/ssti-explained.html` to `writing/your-new-post.html`
-2. Change the `<title>`, `<h1>`, dateline, and body
-3. Add a `<li>` to the `.posts` list in `index.html` linking to it
+Post tags: keep the vocabulary small — `web`, `infra`, `notes`, `tooling`.
 
 ## Local preview
 
 ```bash
-cd path/to/this/folder
 python3 -m http.server 8000
 ```
 
-Then open `http://localhost:8000`. Use this rather than opening the file
-directly — relative paths behave the same way they will in production.
+Open `http://localhost:8000`. Use this rather than opening the file
+directly, so relative paths behave as they will in production.
 
 ## Deploying
 
-Commit and push to `main`. GitHub Pages rebuilds automatically, usually
-within a minute.
+```bash
+git add .
+git commit -m "message"
+git push
+```
+
+Live within about a minute. Favicons cache hard — hard-reload with
+Cmd+Shift+R if the tab icon looks stale.
+
+## Notes on the design
+
+- Dark only. Depth comes from layered surfaces (`--bg`, `--surface`,
+  `--surface-2`) and low-contrast rules, not from glow.
+- Teal accent appears in a handful of places on purpose. Adding more
+  will make it look like every other security site.
+- Motion: one staggered reveal of the hero panel on load, a slow pulse on
+  the live dot, scroll progress bar, scrollspy nav, live Chennai clock.
+  All of it disabled under `prefers-reduced-motion` except the clock.
+- Careful with CSS `padding` shorthand on `.wrap` children — a shorthand
+  will wipe the horizontal gutter. Use `padding-top` / `padding-bottom`.

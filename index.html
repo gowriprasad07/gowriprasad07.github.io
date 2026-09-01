@@ -3,11 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Gowri Prasad — web application security</title>
-<meta name="description" content="Gowri Prasad. Security engineer at Zoho, working on offensive and application security. Notes on web security.">
+<title>gp_sec — Gowri Prasad</title>
+<meta name="description" content="Gowri Prasad. Security engineer at Zoho. Notes on web security and whatever I'm currently working out.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0A1013">
 
-<meta property="og:title" content="Gowri Prasad — web application security">
-<meta property="og:description" content="Security engineer. Notes on web security, written down so I don't learn them twice.">
+<meta property="og:title" content="gp_sec — Gowri Prasad">
+<meta property="og:description" content="Security engineer. Notes on web security and whatever I'm currently working out.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://gowriprasad07.github.io">
 <meta property="og:image" content="https://gowriprasad07.github.io/og-image.png">
@@ -16,6 +18,7 @@
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap" rel="stylesheet">
@@ -23,15 +26,15 @@
 </head>
 <body>
 
+<div id="progress" aria-hidden="true"></div>
 <a class="skip" href="#whoami">Skip to main content</a>
 
 <header class="topbar">
   <div class="wrap topbar-inner">
     <a class="wordmark" href="/">gp_sec</a>
-    <nav aria-label="Sections">
-      <a href="#whoami">Who I am</a>
+    <nav id="nav" aria-label="Sections">
+      <a href="#whoami">About</a>
       <a href="#writing">Writing</a>
-      <a href="#projects">Projects</a>
       <a href="#contact">Contact</a>
     </nav>
   </div>
@@ -44,7 +47,7 @@
     <div class="wrap hero-grid">
       <div class="hero-text">
         <h1>Gowri Prasad</h1>
-        <p class="role">Web application security</p>
+        <p class="role">Web application security · Chennai</p>
 
         <p class="lede">
           I'm a security engineer at Zoho, working on offensive and application
@@ -64,26 +67,16 @@
         </div>
       </div>
 
-      <figure class="exchange" aria-label="Example HTTP exchange">
-        <pre class="req"><span class="m">GET</span> /whoami <span class="dim">HTTP/1.1</span>
-<span class="h">Host:</span> gowriprasad07.github.io</pre>
-        <pre class="res"><span class="dim">HTTP/1.1</span> <span class="ok">200 OK</span>
-<span class="h">Content-Type:</span> application/json
-
-{
-  <span class="k">"role"</span>: <span class="v">"Security engineer, Zoho"</span>,
-  <span class="k">"works_on"</span>: [<span class="v">"web"</span>, <span class="v">"api"</span>, <span class="v">"code review"</span>],
-  <span class="k">"based"</span>: <span class="v">"Chennai, India"</span>,
-  <span class="k">"certs"</span>: [<span class="v">"OSCP+"</span>],
-  <span class="k">"youtube"</span>: <span class="v">"@gp_sec"</span>,
-  <span class="k">"writes_here"</span>: <span class="v">"when something finally clicks"</span>
-}</pre>
+      <figure class="exchange" aria-label="HTTP exchange describing this profile">
+        <div class="panel-bar"><span class="dot"></span> live</div>
+        <pre class="req"><span class="ln" style="--i:0"><span class="m">GET</span> /whoami <span class="dim">HTTP/1.1</span></span><span class="ln" style="--i:1"><span class="h">Host:</span> gowriprasad07.github.io</span><span class="ln" style="--i:2"><span class="h">Accept:</span> application/json</span></pre>
+        <pre class="res"><span class="ln" style="--i:5"><span class="dim">HTTP/1.1</span> <span class="ok">200 OK</span></span><span class="ln" style="--i:6"><span class="h">Content-Type:</span> application/json</span><span class="ln" style="--i:7"> </span><span class="ln" style="--i:8">{</span><span class="ln" style="--i:9">  <span class="k">"role"</span>: <span class="v">"Security engineer, Zoho"</span>,</span><span class="ln" style="--i:10">  <span class="k">"works_on"</span>: [<span class="v">"web"</span>, <span class="v">"api"</span>, <span class="v">"code review"</span>],</span><span class="ln" style="--i:11">  <span class="k">"certs"</span>: [<span class="v">"OSCP+"</span>],</span><span class="ln" style="--i:12">  <span class="k">"youtube"</span>: <span class="v">"@gp_sec"</span>,</span><span class="ln" style="--i:13">  <span class="k">"writes_here"</span>: <span class="v">"when something clicks"</span></span><span class="ln" style="--i:14">}</span></pre>
       </figure>
     </div>
   </section>
 
   <!-- ============ WHO I AM ============ -->
-  <section id="whoami" class="band">
+  <section id="whoami" class="band alt">
     <div class="wrap doc">
       <div class="margin-note">whoami</div>
       <div class="doc-body">
@@ -100,8 +93,8 @@
         <p>
           A good part of the job is bug bounty triage: reproducing what a
           researcher reported, deciding whether it's real, scoring it, tracing
-          it back to a root cause, and then staying with it until the fix
-          actually holds. That work has taught me more than my own testing did.
+          it back to a root cause, and staying with it until the fix actually
+          holds. That work has taught me more than my own testing did.
           Reproducing someone else's finding forces you to understand a system
           you didn't choose, and often enough the more interesting bug is
           sitting next to the one that was reported.
@@ -135,8 +128,8 @@
             <div class="role-what">
               <h4>Security Intern</h4>
               <p class="role-org">Hyperspace IT India Pvt. Ltd.</p>
-              <p>First exposure to real assessment work, and where I learned
-                 that reading documentation carefully beats guessing.</p>
+              <!-- EDIT: replace with what you actually took from this year -->
+              <p>First exposure to real assessment work.</p>
             </div>
           </article>
         </div>
@@ -160,78 +153,48 @@
   </section>
 
   <!-- ============ WRITING ============ -->
-  <section id="writing" class="band alt">
+  <section id="writing" class="band">
     <div class="wrap doc">
-      <div class="margin-note">notes</div>
+      <div class="margin-note">writing</div>
       <div class="doc-body">
         <h2>Writing</h2>
         <p class="sub">
-          Mostly for me. Writing something down is how I check whether I
-          actually understood it, and it turns out I usually hadn't.
-        </p>
-
-        <p class="sub">
-          Some of it ends up on video instead —
-          <a href="https://www.youtube.com/@gp_sec/videos">youtube.com/@gp_sec</a>.
+          Security work, mostly, and whatever concept I've decided to chase down
+          that week. Writing it out is how I check whether I understood it —
+          and it turns out I usually hadn't. Some of it ends up on video instead,
+          at <a href="https://www.youtube.com/@gp_sec/videos">youtube.com/@gp_sec</a>.
         </p>
 
         <ul class="posts">
           <li>
             <a href="writing/ssti-explained.html">
-              <span class="post-title">How server-side template injection actually works</span>
-              <span class="post-meta">I copied these payloads for a year before understanding them</span>
+              <span>
+                <span class="post-title">How server-side template injection actually works</span>
+                <span class="post-meta">I copied these payloads for a year before understanding them</span>
+              </span>
+              <span class="post-side">
+                <span class="post-tag">web</span>
+                <time datetime="2026-09-01">Sep 2026</time>
+              </span>
             </a>
-            <time datetime="2026-09-01">Sep 2026</time>
           </li>
           <!--
-          Copy this block for each new post. Newest at the top.
+          Copy this block per post. Newest at the top.
+          Tags: web / infra / notes / tooling — keep the vocabulary small.
           <li>
-            <a href="writing/your-post-slug.html">
-              <span class="post-title">Title of the post</span>
-              <span class="post-meta">One line that makes someone want to read it</span>
+            <a href="writing/your-slug.html">
+              <span>
+                <span class="post-title">Title</span>
+                <span class="post-meta">One line that makes someone want to read it</span>
+              </span>
+              <span class="post-side">
+                <span class="post-tag">web</span>
+                <time datetime="2026-09-15">Sep 2026</time>
+              </span>
             </a>
-            <time datetime="2026-09-15">Sep 2026</time>
           </li>
           -->
         </ul>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ PROJECTS ============ -->
-  <section id="projects" class="band">
-    <div class="wrap doc">
-      <div class="margin-note">projects</div>
-      <div class="doc-body">
-        <h2>Projects</h2>
-        <p class="sub">Small things, mostly built because I got tired of doing something by hand.</p>
-
-        <article class="project">
-          <div class="project-head">
-            <h3>This site</h3>
-            <a class="repo-link" href="https://github.com/gowriprasad07/gowriprasad07.github.io">github</a>
-          </div>
-          <p>Hand-written HTML and CSS. No framework, no build step, no
-             dependencies to audit. I'm replacing it with a static site
-             generator I'm writing in Python — partly for the practice, partly
-             because pasting a new <code>&lt;li&gt;</code> for every post won't
-             survive past ten of them.</p>
-          <p class="tags"><code>html</code><code>css</code><code>python</code></p>
-        </article>
-
-        <!--
-        Add real repos here as you publish them. Delete this comment block
-        once you have two or three.
-        <article class="project">
-          <div class="project-head">
-            <h3>Project name</h3>
-            <a class="repo-link" href="https://github.com/gowriprasad07/repo-name">github</a>
-          </div>
-          <p>What it does. Then the annoyance that made you build it — that
-             second part is what makes someone click.</p>
-          <p class="tags"><code>python</code><code>recon</code></p>
-        </article>
-        -->
       </div>
     </div>
   </section>
@@ -261,13 +224,64 @@
 
 <footer>
   <div class="wrap foot-inner">
-    <span>Written by hand, hosted on GitHub Pages</span>
-    <span id="year"></span>
+    <span>Written by hand · hosted on GitHub Pages</span>
+    <span id="clock">Chennai<span class="sep">·</span><span id="time">--:--:--</span></span>
   </div>
 </footer>
 
 <script>
-  document.getElementById('year').textContent = new Date().getFullYear();
+(function () {
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* live clock — real data, so it runs even with reduced motion */
+  var timeEl = document.getElementById('time');
+  function tick() {
+    timeEl.textContent = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Kolkata',
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+    }).format(new Date()) + ' IST';
+  }
+  tick();
+  setInterval(tick, 1000);
+
+  if (reduced) return;
+
+  /* scroll progress */
+  var bar = document.getElementById('progress');
+  var raf = null;
+  function onScroll() {
+    if (raf) return;
+    raf = requestAnimationFrame(function () {
+      var h = document.documentElement;
+      var max = h.scrollHeight - h.clientHeight;
+      bar.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + '%';
+      raf = null;
+    });
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  /* scrollspy — highlight the section you're reading */
+  var links = Array.prototype.slice.call(
+    document.querySelectorAll('#nav a[href^="#"]'));
+  var byId = {};
+  var targets = [];
+  links.forEach(function (a) {
+    var el = document.getElementById(a.getAttribute('href').slice(1));
+    if (el) { byId[el.id] = a; targets.push(el); }
+  });
+
+  var obs = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      links.forEach(function (a) { a.classList.remove('active'); });
+      var a = byId[e.target.id];
+      if (a) a.classList.add('active');
+    });
+  }, { rootMargin: '-45% 0px -50% 0px' });
+
+  targets.forEach(function (t) { obs.observe(t); });
+})();
 </script>
 </body>
 </html>
