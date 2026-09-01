@@ -211,7 +211,8 @@ a:hover { color: var(--accent); text-decoration-color: var(--accent-mid); }
   100% { box-shadow: 0 0 0 0 rgba(83,214,206,0); }
 }
 
-.exchange pre { margin: 0; padding: .9rem 1rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+.exchange pre { margin: 0; padding: .9rem 1rem; white-space: normal; overflow-wrap: anywhere; }
+.exchange .ln { white-space: pre-wrap; }
 .exchange .req { border-bottom: 1px solid var(--line-soft); color: var(--text-dim); }
 
 /* staggered line reveal — one orchestrated moment, on load only */
@@ -337,6 +338,7 @@ footer { padding: 2.25rem 0 3.25rem; border-top: 1px solid var(--line-soft); }
 }
 #clock { color: var(--text-mid); }
 #clock .sep { color: var(--accent-mid); margin: 0 .45rem; }
+.foot-inner .quote { max-width: 42ch; }
 
 /* ---------------- article pages ---------------- */
 
@@ -368,6 +370,20 @@ footer { padding: 2.25rem 0 3.25rem; border-top: 1px solid var(--line-soft); }
   margin: 1.6rem 0; padding: .2rem 0 .2rem 1.1rem;
   border-left: 2px solid var(--accent-mid);
   color: var(--text); font-style: italic;
+}
+.article .diagram {
+  margin: 1.8rem 0;
+  padding: 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.article .diagram img { display: block; width: 100%; height: auto; }
+.article .diagram figcaption {
+  margin-top: .75rem;
+  font-family: var(--mono);
+  font-size: .74rem;
+  color: var(--text-dim);
+  text-align: center;
 }
 .back { display: inline-block; font-family: var(--mono); font-size: .8rem; color: var(--text-dim); text-decoration: none; }
 .back:hover { color: var(--accent); }

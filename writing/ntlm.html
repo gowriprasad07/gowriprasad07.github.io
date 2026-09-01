@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NTLM authentication, and why it keeps coming back to bite you — gp_sec</title>
+<meta name="description" content="How NTLM challenge-response works, why the hash is as good as the password, and the scenarios where it goes wrong.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0A1013">
+
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="wordmark" href="../index.html">gp_sec</a>
+    <nav aria-label="Sections">
+      <a href="../index.html#writing">Writing</a>
+      <a href="../index.html#contact">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main class="article">
+  <div class="wrap article-inner">
+    <a class="back" href="../index.html#writing">Back to writing</a>
+
+    <p class="dateline">24 March 2026 · infra</p>
+    <h1>NTLM authentication, and why it keeps coming back to bite you</h1>
+
+    <!--
+      Target 800-1000 words. You know this cold, so write it plainly and don't
+      pad. The diagram carries the mechanics; your job is the "why" and the
+      scenarios. Delete each comment as you fill the section.
+
+      OPENING (3-4 sentences): start with when you first ran into NTLM and what
+      confused you about it. Something concrete. Not "NTLM is a legacy protocol
+      widely used in Windows environments" — everyone opens like that.
+    -->
+
+    <h2>The handshake</h2>
+    <p>
+      <!-- One paragraph walking through the six steps below in your own words.
+           Point at the diagram rather than repeating every label. -->
+    </p>
+
+    <figure class="diagram">
+      <img src="../ntlm-diagram.svg" alt="NTLM challenge-response: client negotiates, server sends a nonce, client returns a response computed from its NT hash, the server validates it through the domain controller.">
+    </figure>
+
+    <h2>The hash is the password</h2>
+    <!--
+      The single most important idea, and the one people miss. The response is
+      computed from the NT hash, not the plaintext. So an attacker who has the
+      hash never needs to crack it — they can authenticate directly. Explain
+      pass-the-hash here in two or three sentences. This is the "why it bites
+      you" the title promises.
+    -->
+
+    <h2>Why it still exists</h2>
+    <!--
+      Kerberos is the default in AD and has been for years, yet NTLM won't die.
+      Cover the real reasons you've seen: connecting by IP instead of hostname,
+      no SPN, local accounts, older software, fallback when Kerberos fails.
+      Keep it to the ones you've actually hit.
+    -->
+
+    <h2>Where it goes wrong</h2>
+    <!--
+      The scenarios section the reader came for. A few sub-points, each 2-3
+      sentences. Suggested, but use what you know:
+        - Relay: no session binding, so a MITM forwards the whole handshake to
+          another server. Why signing / EPA / channel binding is the fix.
+        - Pass-the-hash, tying back to the section above.
+        - Downgrade to NTLMv1 and why v1 is so much weaker than v2.
+        - Coercion (an authenticated request you can trigger and then relay).
+      Say what you look for as a tester in each case. Sanitised, no client detail.
+    -->
+
+    <h2>What actually fixes it</h2>
+    <!--
+      Short and practical. SMB signing, LDAP channel binding, disabling NTLMv1,
+      restricting or auditing NTLM, moving to Kerberos where you can. One
+      paragraph. Note which of these you can realistically get a client to do
+      versus which stay theoretical.
+    -->
+
+    <h2>What I still find awkward</h2>
+    <!--
+      Optional, recommended. One honest uncertainty. Makes the whole post read
+      as yours and invites replies.
+    -->
+
+    <p><a class="back" href="../index.html#writing">Back to writing</a></p>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot-inner">
+    <span class="quote">"Attackers think in graphs, defenders think in lists." — John Lambert</span>
+    <span>2026</span>
+  </div>
+</footer>
+</body>
+</html>

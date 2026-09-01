@@ -47,7 +47,7 @@
     <div class="wrap hero-grid">
       <div class="hero-text">
         <h1>Gowri Prasad</h1>
-        <p class="role">Web application security · Chennai</p>
+        <p class="role">Security Engineer · Chennai</p>
 
         <p class="lede">
           I'm a security engineer at Zoho, working on offensive and application
@@ -63,14 +63,25 @@
 
         <div class="hero-actions">
           <a class="btn" href="#writing">Read the notes</a>
-          <a class="btn btn-quiet" href="mailto:bgowriprasad@gmail.com">Say hello</a>
+          <a class="btn btn-quiet" href="mailto:gps3curity@gmail.com">Say hello</a>
         </div>
       </div>
 
       <figure class="exchange" aria-label="HTTP exchange describing this profile">
         <div class="panel-bar"><span class="dot"></span> live</div>
-        <pre class="req"><span class="ln" style="--i:0"><span class="m">GET</span> /whoami <span class="dim">HTTP/1.1</span></span><span class="ln" style="--i:1"><span class="h">Host:</span> gowriprasad07.github.io</span><span class="ln" style="--i:2"><span class="h">Accept:</span> application/json</span></pre>
-        <pre class="res"><span class="ln" style="--i:5"><span class="dim">HTTP/1.1</span> <span class="ok">200 OK</span></span><span class="ln" style="--i:6"><span class="h">Content-Type:</span> application/json</span><span class="ln" style="--i:7"> </span><span class="ln" style="--i:8">{</span><span class="ln" style="--i:9">  <span class="k">"role"</span>: <span class="v">"Security engineer, Zoho"</span>,</span><span class="ln" style="--i:10">  <span class="k">"works_on"</span>: [<span class="v">"web"</span>, <span class="v">"api"</span>, <span class="v">"code review"</span>],</span><span class="ln" style="--i:11">  <span class="k">"certs"</span>: [<span class="v">"OSCP+"</span>],</span><span class="ln" style="--i:12">  <span class="k">"youtube"</span>: <span class="v">"@gp_sec"</span>,</span><span class="ln" style="--i:13">  <span class="k">"writes_here"</span>: <span class="v">"when something clicks"</span></span><span class="ln" style="--i:14">}</span></pre>
+        <pre class="req"><span class="ln" style="--i:0"><span class="m">GET</span> /whoami <span class="dim">HTTP/1.1</span></span>
+<span class="ln" style="--i:1"><span class="h">Host:</span> gowriprasad07.github.io</span>
+<span class="ln" style="--i:2"><span class="h">Accept:</span> application/json</span></pre>
+        <pre class="res"><span class="ln" style="--i:5"><span class="dim">HTTP/1.1</span> <span class="ok">200 OK</span></span>
+<span class="ln" style="--i:6"><span class="h">Content-Type:</span> application/json</span>
+<span class="ln" style="--i:7"> </span>
+<span class="ln" style="--i:8">{</span>
+<span class="ln" style="--i:9">  <span class="k">"role"</span>: <span class="v">"Security engineer, Zoho"</span>,</span>
+<span class="ln" style="--i:10">  <span class="k">"works_on"</span>: [<span class="v">"web"</span>, <span class="v">"api"</span>, <span class="v">"on-prem"</span>, <span class="v">"cloud"</span>],</span>
+<span class="ln" style="--i:11">  <span class="k">"platforms"</span>: [<span class="v">"linux"</span>, <span class="v">"windows"</span>],</span>
+<span class="ln" style="--i:12">  <span class="k">"certs"</span>: [<span class="v">"OSCP+"</span>],</span>
+<span class="ln" style="--i:13">  <span class="k">"youtube"</span>: <span class="v">"@gp_sec"</span></span>
+<span class="ln" style="--i:14">}</span></pre>
       </figure>
     </div>
   </section>
@@ -83,30 +94,10 @@
         <h2>Who I am</h2>
 
         <p>
-          I've been on the security assessment team at Zoho since 2022. Day to
-          day that means web application penetration testing across our
-          products, secure code review, and vulnerability research — sitting
-          with an application until its logic makes sense, then finding the
-          place where that logic disagrees with itself.
-        </p>
-
-        <p>
-          A good part of the job is bug bounty triage: reproducing what a
-          researcher reported, deciding whether it's real, scoring it, tracing
-          it back to a root cause, and staying with it until the fix actually
-          holds. That work has taught me more than my own testing did.
-          Reproducing someone else's finding forces you to understand a system
-          you didn't choose, and often enough the more interesting bug is
-          sitting next to the one that was reported.
-        </p>
-
-        <p>
-          The rest is scripting. I write Python and Bash to take the repetitive
-          parts out of an assessment, and maintain reusable test cases so the
-          same checks don't get rebuilt from scratch every time. Automation
-          handles the predictable half. Access control, authentication flows,
-          and business logic still need somebody who understands what the
-          application is <em>for</em>.
+          I've been on the security assessment team at Zoho since 2022 — web and
+          API testing across our products, secure code review, and bug bounty
+          triage. Most of what I know came from reproducing other people's
+          findings and working out why they landed. The rest I write down here.
         </p>
 
         <h3 class="sub-head">Background</h3>
@@ -143,11 +134,7 @@
         </p>
 
         <h3 class="sub-head">Outside work</h3>
-        <p>
-          Football, mostly. Playing it, watching it, and reading more about
-          tactics than is strictly reasonable. I'll argue about a formation for
-          longer than anyone wants me to.
-        </p>
+        <p>Football, mostly — I play when I can, and I follow Bayern Munich.</p>
       </div>
     </div>
   </section>
@@ -167,33 +154,17 @@
 
         <ul class="posts">
           <li>
-            <a href="writing/ssti-explained.html">
+            <a href="writing/ntlm.html">
               <span>
-                <span class="post-title">How server-side template injection actually works</span>
-                <span class="post-meta">I copied these payloads for a year before understanding them</span>
+                <span class="post-title">NTLM authentication, and why it keeps coming back to bite you</span>
+                <span class="post-meta">Challenge-response, relay, and the scenarios where it goes wrong</span>
               </span>
               <span class="post-side">
-                <span class="post-tag">web</span>
-                <time datetime="2026-09-01">Sep 2026</time>
+                <span class="post-tag">infra</span>
+                <time datetime="2026-03-24">Mar 2026</time>
               </span>
             </a>
           </li>
-          <!--
-          Copy this block per post. Newest at the top.
-          Tags: web / infra / notes / tooling — keep the vocabulary small.
-          <li>
-            <a href="writing/your-slug.html">
-              <span>
-                <span class="post-title">Title</span>
-                <span class="post-meta">One line that makes someone want to read it</span>
-              </span>
-              <span class="post-side">
-                <span class="post-tag">web</span>
-                <time datetime="2026-09-15">Sep 2026</time>
-              </span>
-            </a>
-          </li>
-          -->
         </ul>
       </div>
     </div>
@@ -210,7 +181,7 @@
           working on something interesting, I'd like to hear from you.
         </p>
         <ul class="links">
-          <li><a href="mailto:bgowriprasad@gmail.com">bgowriprasad@gmail.com</a></li>
+          <li><a href="mailto:gps3curity@gmail.com">gps3curity@gmail.com</a></li>
           <li><a href="https://www.linkedin.com/in/gowriprasad-kb-930890157/">LinkedIn</a></li>
           <li><a href="https://github.com/gowriprasad07">GitHub</a></li>
           <li><a href="https://www.youtube.com/@gp_sec/videos">YouTube — @gp_sec</a></li>
@@ -224,7 +195,7 @@
 
 <footer>
   <div class="wrap foot-inner">
-    <span>Written by hand · hosted on GitHub Pages</span>
+    <span class="quote">"Attackers think in graphs, defenders think in lists." — John Lambert</span>
     <span id="clock">Chennai<span class="sep">·</span><span id="time">--:--:--</span></span>
   </div>
 </footer>
