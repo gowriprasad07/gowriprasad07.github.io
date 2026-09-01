@@ -3,14 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Gowri — Web application penetration tester</title>
-<meta name="description" content="Gowri — application security specialist based in Chennai, India. Web, API and mobile penetration testing.">
+<title>Gowri Prasad — web security</title>
+<meta name="description" content="Gowri Prasad. Web application security. Notes on things I worked out the hard way.">
 
-<!-- Open Graph: controls how the link looks when shared on LinkedIn -->
-<meta property="og:title" content="Gowri — Web application penetration tester">
-<meta property="og:description" content="Application security specialist. Web, API and mobile penetration testing.">
-<meta property="og:type" content="profile">
+<meta property="og:title" content="Gowri Prasad — web security">
+<meta property="og:description" content="Notes on web application security, written down so I don't learn them twice.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://gowriprasad07.github.io">
 
+<link rel="icon" href="/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap" rel="stylesheet">
@@ -18,16 +19,15 @@
 </head>
 <body>
 
-<a class="skip" href="#scope">Skip to content</a>
+<a class="skip" href="#whoami">Skip to main content</a>
 
 <header class="topbar">
   <div class="wrap topbar-inner">
-    <a class="wordmark" href="/">Gowri</a>
+    <a class="wordmark" href="/">gowriprasad07</a>
     <nav aria-label="Sections">
-      <a href="#scope">About</a>
-      <a href="#method">Capabilities</a>
-      <a href="#findings">Work</a>
-      <a href="#notes">Writing</a>
+      <a href="#whoami">Who I am</a>
+      <a href="#writing">Writing</a>
+      <a href="#projects">Projects</a>
       <a href="#contact">Contact</a>
     </nav>
   </div>
@@ -39,175 +39,202 @@
   <section class="hero">
     <div class="wrap hero-grid">
       <div class="hero-text">
-        <h1>Gowri</h1>
-        <p class="role">Web application penetration tester</p>
+        <h1>Gowri Prasad</h1>
+        <p class="role">Web application security</p>
+
+        <!-- EDIT: this is the most important copy on the page. Rewrite it in your
+             own words. Say one thing you actually believe about the work. -->
         <p class="lede">
-          I break into web applications so they hold up when someone else tries.
-          Manual testing, source review, and reports your engineers can actually act on.
+          I break web applications for a living. The bugs I find most often
+          aren't in the code — they're in an assumption someone made about who
+          should be allowed to do what.
         </p>
+        <p class="lede">
+          This site is mostly notes. When something confuses me for a week and
+          then finally clicks, I write it down here so I don't have to learn it
+          a second time.
+        </p>
+
         <div class="hero-actions">
-          <!-- EDIT: point this at your real CV file -->
-          <a class="btn" href="resume.pdf">Download CV</a>
+          <a class="btn" href="#writing">Read the notes</a>
           <!-- EDIT: your real email -->
-          <a class="btn btn-quiet" href="mailto:you@example.com">Get in touch</a>
+          <a class="btn btn-quiet" href="mailto:bgowriprasad@gmail.com">Say hello</a>
         </div>
       </div>
 
-      <figure class="exchange" aria-label="Example HTTP exchange describing this profile">
-        <pre class="req"><span class="m">GET</span> /gowri <span class="dim">HTTP/1.1</span>
-<span class="h">Host:</span> gowri.github.io
-<span class="h">Accept:</span> application/json</pre>
+      <figure class="exchange" aria-label="Example HTTP exchange">
+        <pre class="req"><span class="m">GET</span> /whoami <span class="dim">HTTP/1.1</span>
+<span class="h">Host:</span> gowriprasad07.github.io</pre>
         <pre class="res"><span class="dim">HTTP/1.1</span> <span class="ok">200 OK</span>
 <span class="h">Content-Type:</span> application/json
 
 {
-  <span class="k">"role"</span>: <span class="v">"Application security"</span>,
-  <span class="k">"focus"</span>: [<span class="v">"web"</span>, <span class="v">"api"</span>, <span class="v">"mobile"</span>],
+  <span class="k">"works_on"</span>: [<span class="v">"web"</span>, <span class="v">"api"</span>],
   <span class="k">"based"</span>: <span class="v">"Chennai, India"</span>,
-  <span class="k">"open_to"</span>: <span class="v">"engagements, full-time"</span>
+  <span class="k">"currently"</span>: <span class="v">"OSCP, and learning Python properly"</span>,
+  <span class="k">"writes_here"</span>: <span class="v">"whenever something clicks"</span>
 }</pre>
       </figure>
     </div>
   </section>
 
-  <!-- ============ ABOUT ============ -->
-  <section id="scope" class="band">
+  <!-- ============ WHO I AM ============ -->
+  <section id="whoami" class="band">
     <div class="wrap doc">
-      <div class="margin-note">Scope</div>
+      <div class="margin-note">whoami</div>
       <div class="doc-body">
-        <h2>What I do</h2>
-        <!-- EDIT: rewrite these two paragraphs in your own words. Keep them short. -->
-        <p>
-          I test web applications, APIs, and the plumbing behind them. Most of my work is
-          hands-on assessment: mapping attack surface, chaining small flaws into real impact,
-          and writing it up so the fix is obvious.
-        </p>
-        <p>
-          Automated scanners find the easy half. The half that matters — broken access control,
-          business logic you can bend, trust assumptions between services — needs someone
-          sitting with the application until it makes sense. That is the part I enjoy.
-        </p>
-        <ul class="facts">
-          <!-- EDIT: swap in your real facts. Delete rows you don't have yet. -->
-          <li><span>Based</span> Chennai, Tamil Nadu, India</li>
-          <li><span>Focus</span> Web &amp; API security, OWASP Top 10, business logic</li>
-          <li><span>Certifications</span> OSCP (in progress)</li>
-          <li><span>Availability</span> Open to engagements</li>
-        </ul>
-      </div>
-    </div>
-  </section>
+        <h2>Who I am</h2>
 
-  <!-- ============ CAPABILITIES ============ -->
-  <section id="method" class="band alt">
-    <div class="wrap doc">
-      <div class="margin-note">Method</div>
-      <div class="doc-body">
-        <h2>Capabilities</h2>
-        <div class="caps">
-          <!-- EDIT: keep the groups that are true for you, delete the rest. -->
-          <div class="cap">
-            <h3>Application testing</h3>
-            <p>Authentication and session handling, access control, injection, SSRF,
-               deserialization, file upload paths, business logic abuse.</p>
-          </div>
-          <div class="cap">
-            <h3>API and services</h3>
-            <p>REST and GraphQL assessment, authorization boundaries between services,
-               token handling, rate limiting and enumeration.</p>
-          </div>
-          <div class="cap">
-            <h3>Tooling</h3>
-            <p class="tools">
-              <code>Burp Suite</code><code>ffuf</code><code>nmap</code><code>sqlmap</code><code>Nuclei</code><code>Python</code><code>Bash</code><code>Git</code>
-            </p>
-          </div>
-          <div class="cap">
-            <h3>Reporting</h3>
-            <p>Findings written for two audiences at once: a risk summary the business reads,
-               and reproduction steps an engineer can follow without asking questions.</p>
-          </div>
+        <!-- EDIT: rewrite all of this. Keep it first person. Be specific.
+             It's fine to say what you don't know yet. -->
+        <p>
+          I'm a security engineer in Chennai working mostly on web application
+          and API testing. Day to day that means sitting with an application
+          until its logic makes sense, then finding the place where that logic
+          disagrees with itself.
+        </p>
+        <p>
+          Scanners handle the obvious half. The half I care about is access
+          control, authentication flows, and business logic — the bugs you only
+          find by understanding what the application is <em>for</em>. Nobody has
+          automated that yet.
+        </p>
+        <p>
+          Right now I'm working through OSCP and rebuilding my Python from the
+          ground up. I got tired of copying payloads I couldn't explain, so I'm
+          learning to write the thing I've been attacking.
+        </p>
+
+        <!-- EDIT: your real background. Delete the company name if you'd
+             rather not disclose it — "Security engineer" alone is fine. -->
+        <h3 class="sub-head">Background</h3>
+        <div class="timeline">
+          <article class="role-entry">
+            <div class="role-when">2024 — now</div>
+            <div class="role-what">
+              <h4>Security Engineer</h4>
+              <p class="role-org">Company name, or leave this out</p>
+              <p>Web and API penetration testing across client engagements.
+                 Manual assessment, source review, and reports written so the
+                 fix is obvious to whoever has to make it.</p>
+            </div>
+          </article>
+
+          <article class="role-entry">
+            <div class="role-when">2023 — 2024</div>
+            <div class="role-what">
+              <h4>Previous role</h4>
+              <p class="role-org">Company name</p>
+              <p>What you actually did. One or two sentences. Concrete over
+                 impressive.</p>
+            </div>
+          </article>
         </div>
-      </div>
-    </div>
-  </section>
 
-  <!-- ============ WORK ============ -->
-  <section id="findings" class="band">
-    <div class="wrap doc">
-      <div class="margin-note">Findings</div>
-      <div class="doc-body">
-        <h2>Selected work</h2>
-        <p class="sub">Sanitised write-ups. Client names and identifying detail removed.</p>
+        <h3 class="sub-head">What I reach for</h3>
+        <p class="tools">
+          <!-- EDIT: delete anything you don't genuinely use -->
+          <code>Burp Suite</code><code>ffuf</code><code>nmap</code><code>sqlmap</code><code>Nuclei</code><code>Python</code><code>Bash</code><code>Git</code>
+        </p>
 
-        <!-- EDIT: replace with your own. Duplicate a block to add more.
-             Severity classes available: sev-high, sev-med, sev-low -->
-        <article class="finding">
-          <div class="finding-head">
-            <h3>Broken access control in a multi-tenant dashboard</h3>
-            <span class="sev sev-high">High</span>
-          </div>
-          <p>Object identifiers were validated for format but never for ownership, letting any
-             authenticated account read records belonging to other tenants. Reported with a
-             minimal reproduction and a suggested authorization check at the data layer.</p>
-        </article>
-
-        <article class="finding">
-          <div class="finding-head">
-            <h3>Password reset token reuse</h3>
-            <span class="sev sev-med">Medium</span>
-          </div>
-          <p>Reset tokens stayed valid after use and after a subsequent password change,
-             widening the window for account takeover from a leaked link.</p>
-        </article>
-
-        <article class="finding">
-          <div class="finding-head">
-            <h3>Stored cross-site scripting via profile fields</h3>
-            <span class="sev sev-low">Low</span>
-          </div>
-          <p>A display name field escaped output in the main view but not in an admin
-             moderation panel, putting the payload in front of a privileged user.</p>
-        </article>
+        <!-- Optional but recommended: something that isn't security.
+             Delete if you'd rather not. It makes the page read as a person. -->
+        <h3 class="sub-head">Outside work</h3>
+        <p>
+          Something true and unremarkable goes here — what you read, cook, ride,
+          watch. One or two lines. Resist the urge to make it sound impressive.
+        </p>
       </div>
     </div>
   </section>
 
   <!-- ============ WRITING ============ -->
-  <section id="notes" class="band alt">
+  <section id="writing" class="band alt">
     <div class="wrap doc">
-      <div class="margin-note">Notes</div>
+      <div class="margin-note">notes</div>
       <div class="doc-body">
         <h2>Writing</h2>
-        <p class="sub">Things I worked out and wanted to remember.</p>
+        <p class="sub">
+          Mostly for me. I write things down as a way of checking whether I
+          actually understood them, and it turns out I usually hadn't.
+        </p>
 
-        <!-- EDIT: each post is one link. Add a new <li> per post. -->
+        <!-- EDIT: add a <li> per post. Newest first. -->
         <ul class="posts">
           <li>
             <a href="writing/ssti-explained.html">
               <span class="post-title">How server-side template injection actually works</span>
-              <span class="post-meta">Attribute lookups, not magic strings</span>
+              <span class="post-meta">I copied these payloads for a year before understanding them</span>
             </a>
             <time datetime="2026-09-01">Sep 2026</time>
           </li>
+          <!--
+          Copy this block for each new post:
+          <li>
+            <a href="writing/your-post-slug.html">
+              <span class="post-title">Title of the post</span>
+              <span class="post-meta">One line that makes someone want to read it</span>
+            </a>
+            <time datetime="2026-09-15">Sep 2026</time>
+          </li>
+          -->
         </ul>
       </div>
     </div>
   </section>
 
-  <!-- ============ CONTACT ============ -->
-  <section id="contact" class="band">
+  <!-- ============ PROJECTS ============ -->
+  <section id="projects" class="band">
     <div class="wrap doc">
-      <div class="margin-note">Contact</div>
+      <div class="margin-note">projects</div>
+      <div class="doc-body">
+        <h2>Projects</h2>
+        <p class="sub">Small tools, mostly built because I got annoyed at doing something by hand.</p>
+
+        <!-- EDIT: replace with your real repos. Delete the ones you haven't
+             built yet rather than leaving them as promises. -->
+        <article class="project">
+          <div class="project-head">
+            <h3>Project name</h3>
+            <a class="repo-link" href="https://github.com/gowriprasad07/repo-name">github</a>
+          </div>
+          <p>What it does, in one or two sentences. Then why you built it —
+             the annoyance that started it. That second part is what makes
+             someone click.</p>
+          <p class="tags"><code>python</code><code>recon</code></p>
+        </article>
+
+        <article class="project">
+          <div class="project-head">
+            <h3>This site</h3>
+            <a class="repo-link" href="https://github.com/gowriprasad07/gowriprasad07.github.io">github</a>
+          </div>
+          <p>Hand-written HTML and CSS, no framework, no build step. I'm
+             replacing it with a static site generator I'm writing in Python,
+             partly because I want the practice and partly because pasting
+             a new <code>&lt;li&gt;</code> for every post won't scale past ten.</p>
+          <p class="tags"><code>html</code><code>css</code></p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CONTACT ============ -->
+  <section id="contact" class="band alt">
+    <div class="wrap doc">
+      <div class="margin-note">contact</div>
       <div class="doc-body">
         <h2>Get in touch</h2>
-        <p>Happy to talk about assessments, collaboration, or a role.</p>
+        <p>
+          If you've read something here and want to argue with it, or you're
+          working on something interesting, I'd like to hear from you.
+        </p>
         <ul class="links">
-          <!-- EDIT: all four of these -->
-          <li><a href="mailto:you@example.com">you@example.com</a></li>
+          <!-- EDIT: all of these -->
+          <li><a href="mailto:bgowriprasad@gmail.com">bgowriprasad@gmail.com</a></li>
           <li><a href="https://www.linkedin.com/in/your-handle">LinkedIn</a></li>
-          <li><a href="https://github.com/your-handle">GitHub</a></li>
-          <li><a href="resume.pdf">Curriculum vitae (PDF)</a></li>
+          <li><a href="https://github.com/gowriprasad07">GitHub</a></li>
+          <li><a href="resume.pdf">CV (PDF)</a></li>
         </ul>
       </div>
     </div>
@@ -217,7 +244,7 @@
 
 <footer>
   <div class="wrap foot-inner">
-    <span>Built by hand. Hosted on GitHub Pages.</span>
+    <span>Written by hand, hosted on GitHub Pages</span>
     <span id="year"></span>
   </div>
 </footer>
