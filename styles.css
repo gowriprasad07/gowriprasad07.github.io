@@ -397,7 +397,7 @@ footer { padding: 2.25rem 0 3.25rem; border-top: 1px solid var(--line-soft); }
 }
 #clock { color: var(--text-mid); }
 #clock .sep { color: var(--accent-mid); margin: 0 .45rem; }
-.foot-inner .quote { max-width: 42ch; }
+.foot-inner .quote { max-width: none; }
 
 /* ---------------- article pages ---------------- */
 
