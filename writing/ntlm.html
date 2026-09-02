@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NTLM authentication, and why it keeps coming back to bite you — gp_sec</title>
-<meta name="description" content="How NTLM challenge-response works, why the hash is as good as the password, and the scenarios where it goes wrong.">
+<meta name="description" content="How NTLM challenge-response works, what you actually capture on the wire, and why the hash is as good as the password.">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0A1013">
 
@@ -36,68 +36,201 @@
     <p class="dateline">24 March 2026 · infra</p>
     <h1>NTLM authentication, and why it keeps coming back to bite you</h1>
 
-    <!--
-      Target 800-1000 words. You know this cold, so write it plainly and don't
-      pad. The diagram carries the mechanics; your job is the "why" and the
-      scenarios. Delete each comment as you fill the section.
-
-      OPENING (3-4 sentences): start with when you first ran into NTLM and what
-      confused you about it. Something concrete. Not "NTLM is a legacy protocol
-      widely used in Windows environments" — everyone opens like that.
-    -->
+    <p>
+      Early in my career I kept running Responder, watching a "hash" scroll past,
+      and quietly misunderstanding what I was looking at. I assumed I'd caught the
+      password's hash and that a good wordlist would turn it into a password.
+      Sometimes that worked. Often it didn't, and I couldn't have told you why.
+      The gap was small but it changed everything: with NTLM, what you capture
+      decides what you can do with it, and the two things people casually call
+      "the hash" are not the same object.
+    </p>
 
     <h2>The handshake</h2>
     <p>
-      <!-- One paragraph walking through the six steps below in your own words.
-           Point at the diagram rather than repeating every label. -->
+      Start with the shape of it. NTLM is challenge-response. The client says
+      hello, the server sends a random number, the client proves it knows the
+      secret by doing math over that number, and the server checks the answer
+      with a domain controller. The password never crosses the wire and the
+      stored secret never leaves the client. That is the whole design.
     </p>
 
     <figure class="diagram">
       <img src="../ntlm-diagram.svg" alt="NTLM challenge-response: client negotiates, server sends a nonce, client returns a response computed from its NT hash, the server validates it through the domain controller.">
     </figure>
 
-    <h2>The hash is the password</h2>
-    <!--
-      The single most important idea, and the one people miss. The response is
-      computed from the NT hash, not the plaintext. So an attacker who has the
-      hash never needs to crack it — they can authenticate directly. Explain
-      pass-the-hash here in two or three sentences. This is the "why it bites
-      you" the title promises.
-    -->
+    <p>
+      So if the password never travels, what does Responder actually catch? Not
+      the password, and not the stored hash either — it catches step three, the
+      client's <em>answer</em> to the challenge. That one distinction is most of
+      this post.
+    </p>
+
+    <h2>NT and LM — two hashes, and why both exist</h2>
+    <p>
+      Before we get to the answer, there's the stored secret it's derived from.
+      Windows historically kept two of them per account, and you still meet both
+      names, so it's worth being clear on which is which.
+    </p>
+    <p>
+      The <strong>LM hash</strong> is the old one, from LAN Manager in the DOS
+      era, and it's almost comically weak. It uppercases your password, splits it
+      into two seven-character halves, and DES-encrypts a constant with each half
+      independently. Two short halves means a tiny keyspace, and the uppercasing
+      throws away half your character set before you even start. Rainbow tables
+      shred it.
+    </p>
+    <p>
+      The <strong>NT hash</strong> replaced it. It's
+      <code>MD4(UTF-16LE(password))</code> — the whole password, case preserved,
+      no splitting. MD4 is ancient and the hash is unsalted, so it isn't
+      cryptographically impressive, but it isn't broken the way LM is either. Its
+      strength rides entirely on the password behind it. Modern Windows stores
+      the NT hash and leaves the LM field blank, which is why a dumped account
+      today usually looks like this:
+    </p>
+
+    <pre>Administrator:500:aad3b435b51404eeaad3b435b51404ee:9fc864c0eea4760e3d634d43755ba1b7:::
+                   |________________________________| |________________________________|
+                                empty LM                          NT hash</pre>
+
+    <p>
+      That first blob looks like a hash — is it an LM hash? It's the <em>empty</em>
+      LM value. <code>aad3b435b51404eeaad3b435b51404ee</code> is the well-known
+      hash of a blank LM password; seeing it just means LM storage is disabled,
+      which is the state you want. The NT hash is the second blob, and that's the
+      one that matters.
+    </p>
+
+    <h2>What you actually capture on the wire</h2>
+    <p>
+      Here's the idea that took me longest. When Responder captures a "hash," it
+      isn't grabbing the NT hash. It's grabbing the <strong>NetNTLMv2 response</strong>
+      — the client's answer, computed from the NT hash <em>and</em> the server's
+      random challenge. It's the step-three message from the diagram, laid out
+      like this:
+    </p>
+
+    <pre>Administrator::WORKGROUP:1122334455667788:ad65cd8b1b2afacbd43dfcd5d924a35e:0101000000000000...
+|___________| |_______| |______________| |______________________________| |________________|
+    user        domain    server challenge        NTProofStr (HMAC-MD5)         client blob</pre>
+
+    <p>
+      Read left to right: the account and its domain, then the 8-byte challenge
+      the server sent, then the NTProofStr — an HMAC-MD5 keyed by the NTLMv2 hash
+      over the challenge and the blob — then the blob itself, which carries a
+      timestamp, the client's own random bytes, and target info. Feed that whole
+      line to hashcat and you're cracking mode 5600:
+    </p>
+
+    <pre>hashcat -m 5600 captured.txt rockyou.txt</pre>
+
+    <p>
+      Now the part I had backwards. That response is <em>salted by the server's
+      challenge</em>, which changes every single time. So the capture is not the
+      NT hash, can't be replayed, and can't be reversed — a hash isn't encrypted,
+      there's no key, there's nothing to decrypt. The only move is to guess: take
+      a candidate password, compute the NT hash, run the same HMAC with the same
+      challenge, and check whether you land on the NTProofStr you captured. If the
+      password is long and random, you get nothing, and that's the system working
+      as intended.
+    </p>
+
+    <h2>Then what is pass-the-hash?</h2>
+    <p>
+      A completely different attack from a completely different capture. Pass-the-hash
+      uses the <strong>raw NT hash</strong> — the second blob from the dump above —
+      pulled from SAM, LSASS, or NTDS.dit on a machine you've <em>already</em>
+      compromised, not sniffed off the wire. You never crack it. NTLM's own design
+      computes the response from the NT hash, so if you already hold the NT hash
+      you can produce valid responses directly. The plaintext password is
+      irrelevant; you authenticate as the user without ever knowing it.
+    </p>
+    <p>
+      So the two things collapse into one rule worth memorising:
+    </p>
+    <blockquote>
+      What you capture decides what you can do. A NetNTLMv2 response off the wire
+      must be cracked, and a strong password beats you. A raw NT hash from a
+      dumped host gets replayed, and no password strength saves you.
+    </blockquote>
+    <p>
+      Every time I've seen someone frustrated that their "captured hash won't
+      pass-the-hash," this is why: they captured a response, not a hash. The two
+      look similar in a terminal and behave nothing alike.
+    </p>
 
     <h2>Why it still exists</h2>
-    <!--
-      Kerberos is the default in AD and has been for years, yet NTLM won't die.
-      Cover the real reasons you've seen: connecting by IP instead of hostname,
-      no SPN, local accounts, older software, fallback when Kerberos fails.
-      Keep it to the ones you've actually hit.
-    -->
+    <p>
+      NTLM is old — the family dates to the early 90s, and NTLMv2 arrived with
+      Windows NT 4.0 SP4 in 1998. Kerberos replaced it as the Active Directory
+      default back in Windows 2000 and has been preferred ever since. NTLM should
+      have quietly died two decades ago.
+    </p>
+    <p>
+      It didn't, because Windows refuses to break things that still work. Kerberos
+      has requirements NTLM doesn't: you need to reach a domain controller, you
+      need a correctly registered SPN, and you generally need to connect by
+      hostname rather than IP. The moment any of that isn't true — you hit a box
+      by its IP, there's no SPN, it's a local account, it's some legacy service —
+      Windows silently falls back to NTLM instead of failing. That fallback is why
+      it's still everywhere. It's a compatibility shim, and compatibility shims
+      are exactly where security problems live.
+    </p>
 
     <h2>Where it goes wrong</h2>
-    <!--
-      The scenarios section the reader came for. A few sub-points, each 2-3
-      sentences. Suggested, but use what you know:
-        - Relay: no session binding, so a MITM forwards the whole handshake to
-          another server. Why signing / EPA / channel binding is the fix.
-        - Pass-the-hash, tying back to the section above.
-        - Downgrade to NTLMv1 and why v1 is so much weaker than v2.
-        - Coercion (an authenticated request you can trigger and then relay).
-      Say what you look for as a tester in each case. Sanitised, no client detail.
-    -->
+    <p>
+      The scenarios worth knowing, each tied to what I check as a tester.
+    </p>
+    <p>
+      <strong>Relay.</strong> NTLM has no binding between the authentication and
+      the channel it happens over, so a man in the middle can forward the whole
+      handshake to a different server and authenticate <em>as the victim</em>
+      without ever cracking anything. The response is valid; it just gets
+      delivered somewhere the client didn't intend. The fix is signing and channel
+      binding, so the first thing I look for is whether SMB signing is enforced —
+      if it isn't, relay is on the table.
+    </p>
+    <p>
+      <strong>Downgrade to NetNTLMv1.</strong> v1 is built on DES and is
+      effectively broken — captured v1 can be turned into the NT hash outright,
+      not merely cracked. Any environment still accepting v1 is a finding on its
+      own, and coercing a v1 response is a known escalation path.
+    </p>
+    <p>
+      <strong>Coercion.</strong> You often don't have to wait for authentication —
+      you can force it. Primitives like PetitPotam make a privileged machine
+      authenticate to a host you control, turning a passive listening position
+      into an active one you can relay onward. When I see relay is possible, the
+      next question is always whether I can trigger the auth on demand.
+    </p>
+    <p>
+      <strong>Password strength behind a captured response.</strong> When the
+      capture is NetNTLMv2, the entire risk reduces to whether it cracks. A
+      12-character random service-account password and a reused
+      <code>Winter2024!</code> produce identical-looking captures and completely
+      different outcomes.
+    </p>
 
     <h2>What actually fixes it</h2>
-    <!--
-      Short and practical. SMB signing, LDAP channel binding, disabling NTLMv1,
-      restricting or auditing NTLM, moving to Kerberos where you can. One
-      paragraph. Note which of these you can realistically get a client to do
-      versus which stay theoretical.
-    -->
+    <p>
+      Enforce SMB signing and LDAP channel binding so relay stops working.
+      Disable NetNTLMv1 entirely. Restrict or at least audit NTLM usage — modern
+      Windows can log every NTLM authentication, and almost nobody turns it on, so
+      you're blind to exactly the traffic that hurts you. Move to Kerberos
+      wherever the environment allows it. Realistically, signing and killing v1
+      are the two I can usually get a client to actually do; full NTLM restriction
+      tends to stay theoretical because something old always breaks.
+    </p>
 
     <h2>What I still find awkward</h2>
-    <!--
-      Optional, recommended. One honest uncertainty. Makes the whole post read
-      as yours and invites replies.
-    -->
+    <p>
+      Tracing a coercion-plus-relay chain end to end still takes me a diagram
+      every time — which machine is authenticating, to whom, being relayed where,
+      and which of them needs signing turned off for the whole thing to land. I
+      can reason about each hop in isolation, but holding the full path in my head
+      without drawing it is something I'm still not fast at.
+    </p>
 
     <p><a class="back" href="../index.html#writing">Back to writing</a></p>
   </div>
@@ -105,7 +238,7 @@
 
 <footer>
   <div class="wrap foot-inner">
-    <span class="quote">"Attackers think in graphs, defenders think in lists." — John Lambert</span>
+    <span class="quote">&ldquo;Find the bug. Understand why it works. Make sure it doesn&rsquo;t come back.&rdquo;</span>
     <span>2026</span>
   </div>
 </footer>

@@ -288,6 +288,65 @@ a:hover { color: var(--accent); text-decoration-color: var(--accent-mid); }
   color: var(--text-mid);
 }
 
+/* stats row */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  margin: 1.6rem 0 .5rem;
+  background: var(--line-soft);
+  border: 1px solid var(--line-soft);
+}
+.stat {
+  background: var(--bg);
+  padding: .85rem .9rem;
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+}
+.stat-n { font-family: var(--serif); font-size: 1.55rem; color: var(--accent); line-height: 1; }
+.stat-l { font-family: var(--mono); font-size: .68rem; color: var(--text-dim); }
+
+/* horizontal journey */
+.journey {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem .1rem;
+  margin: 1.75rem 0 .5rem;
+  padding: 1rem 0 1.5rem;
+  border-top: 1px solid var(--line-soft);
+}
+.journey li {
+  font-family: var(--mono);
+  font-size: .74rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.journey li:not(:last-child)::after {
+  content: "→";
+  color: var(--accent-mid);
+  margin: 0 .55rem;
+}
+.journey li.now { color: var(--accent); }
+
+/* capability tags */
+.caps { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .85rem; }
+.caps code {
+  font-family: var(--mono); font-size: .76rem;
+  padding: .22rem .55rem;
+  border: 1px solid var(--accent-dim);
+  background: var(--surface);
+  color: var(--text-mid);
+}
+.tools-line { font-size: .88rem; color: var(--text-dim); margin: 0; }
+.tools-line span {
+  font-family: var(--mono); font-size: .72rem;
+  color: var(--accent-mid);
+  margin-right: .5rem;
+}
+
 /* ---------------- post list ---------------- */
 
 .posts { list-style: none; margin: 1.4rem 0 0; padding: 0; }
@@ -404,6 +463,8 @@ footer { padding: 2.25rem 0 3.25rem; border-top: 1px solid var(--line-soft); }
   .margin-note { display: inline-block; }
   .role-entry { grid-template-columns: minmax(0, 1fr); gap: .35rem; }
   .role-when { padding-top: 0; }
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .stat-n { font-size: 1.35rem; }
   .posts a { grid-template-columns: minmax(0, 1fr); gap: .5rem; }
   .foot-inner { flex-direction: column; gap: .4rem; }
   .topbar nav { gap: .9rem; }
