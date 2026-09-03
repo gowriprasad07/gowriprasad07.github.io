@@ -306,6 +306,7 @@ a:hover { color: var(--accent); text-decoration-color: var(--accent-mid); }
 }
 .stat-n { font-family: var(--serif); font-size: 1.55rem; color: var(--accent); line-height: 1; }
 .stat-l { font-family: var(--mono); font-size: .68rem; color: var(--text-dim); }
+.also { font-size: .95rem; color: var(--text-mid); margin-top: 1.4rem; }
 
 /* horizontal journey */
 .journey {
