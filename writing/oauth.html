@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OAuth 2.0 for testers: the flow, and the three things I always check — gp_sec</title>
+<meta name="description" content="What OAuth 2.0 actually does, how it differs from OpenID Connect, and the redirect_uri, state, and code-leak issues I check on every assessment.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0A1013">
+
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="wordmark" href="../index.html">gp_sec</a>
+    <nav aria-label="Sections">
+      <a href="../index.html#writing">Writing</a>
+      <a href="../index.html#contact">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main class="article">
+  <div class="wrap article-inner">
+    <a class="back" href="../index.html#writing">Back to writing</a>
+
+    <p class="dateline">18 April 2026 · web</p>
+    <h1>OAuth 2.0 for testers: the flow, and the three things I always check</h1>
+
+    <p>
+      OAuth is one of those protocols everyone uses and few can explain. I spent
+      a long time treating it as "the Sign in with Google thing" before I sat
+      down and actually understood what it's for. Once that clicked, the bugs I
+      look for stopped being a checklist I'd memorised and started being obvious
+      consequences of how the flow works. This is that understanding, written
+      down, plus the three issues I check on every OAuth assessment.
+    </p>
+
+    <h2>What is OAuth actually for?</h2>
+    <p>
+      One sentence: OAuth 2.0 lets an app do something on your behalf at another
+      service <em>without you handing over your password</em> for that service.
+      You want a photo-printing site to read your Google Photos. You do not want
+      to give the printer your Google password. OAuth is the framework that lets
+      you grant the printer a limited, revocable token instead. That's the whole
+      purpose — <strong>delegated authorization</strong>.
+    </p>
+    <p>
+      Everything else in OAuth exists to serve that one idea, which is why it's
+      worth holding onto. Roles, tokens, redirects — they all make sense once you
+      see them as "how do we hand out a limited permission slip safely?"
+    </p>
+
+    <h2>The roles</h2>
+    <p>
+      Four of them, and the printer example names all four. The
+      <strong>resource owner</strong> is you — you own the photos. The
+      <strong>client</strong> is the app that wants access — the printer. The
+      <strong>authorization server</strong> is what logs you in and issues tokens
+      — Google's OAuth endpoint. The <strong>resource server</strong> is what
+      actually holds the data — the Google Photos API. Two of those are often the
+      same company, which is why people miss that they're separate roles.
+    </p>
+
+    <h2>The flow</h2>
+    <p>
+      The common one is the <strong>authorization code flow</strong>. Watch where
+      the code goes, because that's where the security lives.
+    </p>
+
+    <figure class="diagram">
+      <img src="../oauth-flow.svg" alt="OAuth authorization code flow: user starts at the client, is redirected to the authorization server with client_id, redirect_uri, scope and state; approves; is redirected back with a code; the client exchanges the code plus its secret server-to-server for an access token.">
+    </figure>
+
+    <p>
+      The key move is the split. The user's browser only ever carries the
+      <em>code</em> — a short-lived, single-use voucher. The actual
+      <strong>access token</strong> is exchanged for that code
+      <em>server-to-server</em>, over the back channel, using the client's secret.
+      So even if someone steals the code from the browser, it's useless without
+      the secret they don't have. That front-channel / back-channel split is the
+      single most important thing to understand, and half the bugs below come
+      from breaking it.
+    </p>
+
+    <h2>OAuth vs OpenID Connect — the distinction people blur</h2>
+    <p>
+      This trips up developers constantly, and the confusion is itself a bug
+      class. OAuth answers one question: <em>what is this app allowed to do?</em>
+      That's authorization. It was never designed to answer <em>who is this
+      user?</em>
+    </p>
+    <p>
+      OpenID Connect (OIDC) is a thin layer <em>on top of</em> OAuth 2.0 that adds
+      exactly that missing piece: an <strong>ID token</strong>, a JWT that makes
+      verifiable claims about the user's identity. So the tokens split by job:
+    </p>
+    <blockquote>
+      Access token → "the bearer may call this API." Meant for the resource
+      server. ID token → "this user is who they say they are." Meant for the
+      client, and only in OIDC.
+    </blockquote>
+    <p>
+      The classic mistake: an app uses a plain OAuth <em>access token</em> as
+      proof of who you are — "you got a valid token from Google, so you must be
+      the Google user you claim." But an access token says nothing about
+      identity, and one issued to a <em>different</em> client can sometimes be
+      replayed. If a login uses an access token where it should use a verified ID
+      token, that's worth pulling on. Identity is OIDC's job; authorization is
+      OAuth's.
+    </p>
+
+    <h2>What I check as a tester</h2>
+    <p>
+      Three issues, in the order I usually reach for them.
+    </p>
+
+    <h3>1. redirect_uri manipulation</h3>
+    <p>
+      The <code>redirect_uri</code> tells the authorization server where to send
+      the code back. If the server validates it loosely, an attacker points it at
+      a page they control and the code lands in their hands instead of the
+      client's.
+    </p>
+    <p>
+      The bug is almost always weak matching. Full-URL matching against a strict
+      allowlist is safe. Prefix or substring matching is not. I test whether the
+      server accepts variations the developer didn't intend:
+    </p>
+    <pre>registered:  https://client.com/callback
+
+does it also accept?
+  https://client.com.attacker.com/callback     ← suffix trick
+  https://client.com/callback/../evil          ← path traversal
+  https://client.com/callback?x=@attacker.com  ← parser confusion
+  https://attacker.com/https://client.com/      ← open-redirect chain</pre>
+    <p>
+      If any variation is honoured, the code can be diverted. And this is where it
+      chains: a lax <code>redirect_uri</code> plus an open redirect <em>on the
+      legitimate client</em> is enough to bounce the code out to an attacker even
+      when the allowlist looked reasonable. Which leads to the third issue below.
+    </p>
+
+    <h3>2. Missing or unvalidated state — account binding</h3>
+    <p>
+      The <code>state</code> parameter is OAuth's CSRF defence. The client
+      generates a random value, sends it in step 2, and checks it matches when the
+      code comes back in step 5. No <code>state</code>, or a <code>state</code>
+      that's never checked, and the callback is forgeable.
+    </p>
+    <p>
+      The consequence is more interesting than "CSRF." It's the reverse of what
+      people expect — the attacker doesn't steal the victim's identity, they
+      <em>plant their own</em>:
+    </p>
+
+    <figure class="diagram">
+      <img src="../oauth-csrf.svg" alt="Account binding attack: the attacker starts a flow with their own provider account, obtains a code but doesn't redeem it, then tricks the logged-in victim into completing the callback with the attacker's code. With no state check, the victim's client account gets linked to the attacker's provider identity.">
+    </figure>
+
+    <p>
+      The attacker starts an OAuth flow with <em>their own</em> Google account,
+      grabs the resulting code, and — crucially — doesn't use it. They send the
+      victim a callback link carrying that code. The victim, already logged into
+      the client, follows it; the client redeems the attacker's code and links the
+      victim's account to the <em>attacker's</em> Google identity. Now the attacker
+      can log into the victim's account on the client any time, using their own
+      Google login. To test: complete a flow up to the callback, drop or fix the
+      <code>state</code>, replay it in another session, and see whether the client
+      accepts it.
+    </p>
+
+    <h3>3. Code / token leakage via Referer and redirect chains</h3>
+    <p>
+      Even with a strict allowlist, the code can leak <em>after</em> it lands. If
+      the callback page loads any third-party resource — an analytics script, an
+      ad, an external image — while the code is still in the URL, that code goes
+      out in the <code>Referer</code> header to every one of them.
+    </p>
+    <pre>Referer: https://client.com/callback?code=SFY39...&amp;state=xyz</pre>
+    <p>
+      Anyone receiving that request now has the code. Chain it with the
+      redirect_uri weakness from the first issue and you have a full path: divert
+      or leak the code, redeem it, done. I check what the callback page loads
+      while the code is still in the address bar, whether the code is swapped for
+      a session before any third-party request fires, and whether it's single-use
+      and short-lived so a leaked one is already dead.
+    </p>
+
+    <h2>What I still find awkward</h2>
+    <!--
+    EDIT — optional, in your own words. One honest thing you still find fiddly
+    about OAuth testing. Ideas: PKCE's exact role and when it does/doesn't help;
+    telling a genuine implicit-flow finding from a non-issue; reasoning about
+    token audience across many services. One or two lines. Delete if you'd rather
+    end on issue 3.
+    -->
+
+    <p><a class="back" href="../index.html#writing">Back to writing</a></p>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot-inner">
+    <span class="quote">&ldquo;Find the bug. Understand why it works. Make sure it doesn&rsquo;t come back.&rdquo;</span>
+    <span>2026</span>
+  </div>
+</footer>
+</body>
+</html>
