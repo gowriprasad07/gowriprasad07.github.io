@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Browser-in-the-Browser: phishing that survives the address-bar check — gp_sec</title>
+<meta name="description" content="BitB fakes an SSO popup, address bar and all, inside the page. Why the usual 'check the URL' advice fails, and how to actually catch it.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0A1013">
+
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="wordmark" href="../index.html">gp_sec</a>
+    <nav aria-label="Sections">
+      <a href="../index.html#writing">Writing</a>
+      <a href="../index.html#contact">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main class="article">
+  <div class="wrap article-inner">
+    <a class="back" href="../index.html#writing">Back to writing</a>
+
+    <p class="dateline">2 April 2026 · web</p>
+    <h1>Browser-in-the-Browser: phishing that survives the address-bar check</h1>
+
+    <p>
+      We tell people the same thing every security-awareness session: check the
+      address bar. Look for the padlock, read the domain, make sure it's HTTPS.
+      Browser-in-the-Browser is the attack that makes that advice fail, and it
+      does it without a single clever exploit — it just draws a fake window,
+      address bar and all, inside the page. I spent a while on this during my
+      research and ended up publishing on it; this is the plain-language version.
+    </p>
+
+    <h2>The one idea</h2>
+    <p>
+      When you click "Sign in with Google," a real popup opens — a separate
+      operating-system window with its own title bar and address bar, drawn by
+      the browser. BitB replaces that with an <em>HTML element that looks exactly
+      like the popup</em>. The title bar, the little traffic-light buttons, the
+      padlock, the text <code>accounts.google.com</code> — all of it is markup
+      and CSS on the attacker's page. It's a picture of a window, not a window.
+    </p>
+
+    <figure class="diagram">
+      <img src="../bitb-diagram.svg" alt="Left: a real browser popup, a separate OS window that can be dragged off the browser. Right: a Browser-in-the-Browser fake, an HTML div painted to look identical but trapped inside the page.">
+    </figure>
+
+    <p>
+      So if it's just HTML, why does anyone fall for it? Because the two are
+      pixel-for-pixel identical. The victim is checking the URL exactly like we
+      trained them to — and the URL says <code>accounts.google.com</code>,
+      because the attacker typed those characters into a <code>&lt;div&gt;</code>.
+      The check passes. That's what makes BitB nasty: it doesn't defeat the
+      user's caution, it satisfies it.
+    </p>
+
+    <h2>Why the usual defences don't fire</h2>
+    <p>
+      Walk down the checklist people are taught, and watch each one pass on a
+      fake:
+    </p>
+    <p>
+      <strong>Is it HTTPS?</strong> Yes — the attacker's real page
+      (<code>attacker.com</code>) is served over HTTPS with a valid certificate.
+      The fake popup drawn on it inherits that green feeling. <strong>Is the
+      domain right?</strong> The address-bar text reads
+      <code>accounts.google.com</code>, so yes. <strong>Is there a padlock?</strong>
+      There's a padlock glyph, because the attacker drew one. Every signal we
+      taught users to rely on is attacker-controlled content, so every signal
+      says "safe."
+    </p>
+    <blockquote>
+      BitB doesn't break the address bar. It draws a second one you were never
+      supposed to trust, in the one place you were told to look.
+    </blockquote>
+
+    <h2>The tell</h2>
+    <p>
+      There is one thing the attacker can't fake: a real OS window is a real OS
+      window. You can drag it off the edge of the browser, move it to a second
+      monitor, minimise it on its own. The fake can't leave the page it's painted
+      on — try to drag it past the browser's edge and it clips, because it's a
+      <code>&lt;div&gt;</code> with <code>position</code> and a drag handler, not
+      a window the OS knows about. That's the manual test: grab the popup and pull
+      it outside the browser. If it can't go, it isn't real.
+    </p>
+    <p>
+      That works for a careful human but not at scale, which is the part my
+      research went after — how do you detect this automatically, from inside the
+      browser, before the user types anything?
+    </p>
+
+    <h2>Detecting it automatically</h2>
+    <p>
+      The approach I published used a browser extension with two independent
+      checks, on the logic that a single signal is easy to dodge but two together
+      are harder.
+    </p>
+    <p>
+      <!--
+      EDIT — this is the one section only you can write precisely, since it's
+      your own paper. Describe the two techniques the extension used. From the
+      abstract these were the core, but put them in your own words with whatever
+      detail you're comfortable making public:
+
+        Technique 1: what does it inspect? (e.g. DOM structure of the suspected
+                     window — is there an element imitating browser chrome inside
+                     the page body? real chrome never lives in the DOM.)
+        Technique 2: what's the second, independent signal? (e.g. behaviour of
+                     the "window" when moved / focus / event handling, or an
+                     image / visual comparison of the rendered popup.)
+
+      Two or three sentences each is plenty. The value is that this is YOUR
+      method — say what it does and why you chose two signals instead of one.
+      -->
+    </p>
+    <p>
+      Full write-up and results are in the paper:
+      <a href="https://link.springer.com/chapter/10.1007/978-3-032-20612-1_23">Securing
+      Web Browsing: Detection of Browser-in-the-Browser Attack</a> (Springer).
+    </p>
+
+    <h2>What I check as a tester</h2>
+    <!--
+    EDIT — short and practical, in your own words. A few things you actually
+    look at when SSO / third-party login is in scope. Suggestions to pick from:
+      - does the "popup" appear without a real window.open() / new window?
+      - is the login UI rendered from the page's own DOM rather than a true
+        cross-origin window?
+      - can the SSO flow be framed or drawn over?
+    Two or three lines. Cut what isn't true for you.
+    -->
+
+    <h2>What I'd still like to solve</h2>
+    <!--
+    EDIT — optional, recommended. One honest open problem. From the research:
+    detection that's robust without heavy false positives, or catching a BitB
+    that's been built more carefully than the common toolkits. One or two lines
+    in your voice.
+    -->
+
+    <p><a class="back" href="../index.html#writing">Back to writing</a></p>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot-inner">
+    <span class="quote">&ldquo;Find the bug. Understand why it works. Make sure it doesn&rsquo;t come back.&rdquo;</span>
+    <span>2026</span>
+  </div>
+</footer>
+</body>
+</html>
