@@ -33,16 +33,16 @@
   <div class="wrap article-inner">
     <a class="back" href="../index.html#writing">Back to writing</a>
 
-    <p class="dateline">18 April 2026 · web</p>
+    <p class="dateline">January 2026 · web</p>
     <h1>OAuth 2.0 for testers: the flow, and the three things I always check</h1>
 
     <p>
-      OAuth is one of those protocols everyone uses and few can explain. I spent
-      a long time treating it as "the Sign in with Google thing" before I sat
-      down and actually understood what it's for. Once that clicked, the bugs I
-      look for stopped being a checklist I'd memorised and started being obvious
-      consequences of how the flow works. This is that understanding, written
-      down, plus the three issues I check on every OAuth assessment.
+      OAuth is one of those protocols everyone uses and few can explain. I spent a
+      long time treating it as "the Sign in with Google thing" before I sat down
+      and actually understood what it's for. Once that clicked, the bugs I look
+      for stopped being a checklist I'd memorised and started being obvious
+      results of how the flow works. This is that understanding, written down,
+      plus the three issues I check on every OAuth assessment.
     </p>
 
     <h2>What is OAuth actually for?</h2>
@@ -52,22 +52,22 @@
       You want a photo-printing site to read your Google Photos. You do not want
       to give the printer your Google password. OAuth is the framework that lets
       you grant the printer a limited, revocable token instead. That's the whole
-      purpose — <strong>delegated authorization</strong>.
+      purpose. It's delegated authorization.
     </p>
     <p>
       Everything else in OAuth exists to serve that one idea, which is why it's
-      worth holding onto. Roles, tokens, redirects — they all make sense once you
+      worth holding onto. Roles, tokens, redirects, they all make sense once you
       see them as "how do we hand out a limited permission slip safely?"
     </p>
 
     <h2>The roles</h2>
     <p>
       Four of them, and the printer example names all four. The
-      <strong>resource owner</strong> is you — you own the photos. The
-      <strong>client</strong> is the app that wants access — the printer. The
-      <strong>authorization server</strong> is what logs you in and issues tokens
-      — Google's OAuth endpoint. The <strong>resource server</strong> is what
-      actually holds the data — the Google Photos API. Two of those are often the
+      <strong>resource owner</strong> is you, you own the photos. The
+      <strong>client</strong> is the app that wants access, the printer. The
+      <strong>authorization server</strong> is what logs you in and issues tokens,
+      Google's OAuth endpoint. The <strong>resource server</strong> is what
+      actually holds the data, the Google Photos API. Two of those are often the
       same company, which is why people miss that they're separate roles.
     </p>
 
@@ -83,16 +83,16 @@
 
     <p>
       The key move is the split. The user's browser only ever carries the
-      <em>code</em> — a short-lived, single-use voucher. The actual
+      <em>code</em>, a short-lived, single-use voucher. The actual
       <strong>access token</strong> is exchanged for that code
-      <em>server-to-server</em>, over the back channel, using the client's secret.
+      <em>server to server</em>, over the back channel, using the client's secret.
       So even if someone steals the code from the browser, it's useless without
-      the secret they don't have. That front-channel / back-channel split is the
-      single most important thing to understand, and half the bugs below come
-      from breaking it.
+      the secret they don't have. That front-channel and back-channel split is the
+      single most important thing to understand, and half the bugs below come from
+      breaking it.
     </p>
 
-    <h2>OAuth vs OpenID Connect — the distinction people blur</h2>
+    <h2>OAuth vs OpenID Connect, the distinction people blur</h2>
     <p>
       This trips up developers constantly, and the confusion is itself a bug
       class. OAuth answers one question: <em>what is this app allowed to do?</em>
@@ -100,23 +100,22 @@
       user?</em>
     </p>
     <p>
-      OpenID Connect (OIDC) is a thin layer <em>on top of</em> OAuth 2.0 that adds
-      exactly that missing piece: an <strong>ID token</strong>, a JWT that makes
-      verifiable claims about the user's identity. So the tokens split by job:
+      OpenID Connect (OIDC) is a thin layer on top of OAuth 2.0 that adds exactly
+      that missing piece: an <strong>ID token</strong>, a JWT that makes verifiable
+      claims about the user's identity. So the tokens split by job:
     </p>
     <blockquote>
-      Access token → "the bearer may call this API." Meant for the resource
-      server. ID token → "this user is who they say they are." Meant for the
-      client, and only in OIDC.
+      Access token means "the bearer may call this API." It's meant for the
+      resource server. ID token means "this user is who they say they are." It's
+      meant for the client, and only in OIDC.
     </blockquote>
     <p>
       The classic mistake: an app uses a plain OAuth <em>access token</em> as
-      proof of who you are — "you got a valid token from Google, so you must be
-      the Google user you claim." But an access token says nothing about
-      identity, and one issued to a <em>different</em> client can sometimes be
-      replayed. If a login uses an access token where it should use a verified ID
-      token, that's worth pulling on. Identity is OIDC's job; authorization is
-      OAuth's.
+      proof of who you are. "You got a valid token from Google, so you must be the
+      Google user you claim." But an access token says nothing about identity, and
+      one issued to a <em>different</em> client can sometimes be replayed. If a
+      login uses an access token where it should use a verified ID token, that's
+      worth pulling on. Identity is OIDC's job; authorization is OAuth's.
     </p>
 
     <h2>What I check as a tester</h2>
@@ -145,12 +144,12 @@ does it also accept?
   https://attacker.com/https://client.com/      ← open-redirect chain</pre>
     <p>
       If any variation is honoured, the code can be diverted. And this is where it
-      chains: a lax <code>redirect_uri</code> plus an open redirect <em>on the
+      chains: a loose <code>redirect_uri</code> plus an open redirect <em>on the
       legitimate client</em> is enough to bounce the code out to an attacker even
       when the allowlist looked reasonable. Which leads to the third issue below.
     </p>
 
-    <h3>2. Missing or unvalidated state — account binding</h3>
+    <h3>2. Missing or unvalidated state, account binding</h3>
     <p>
       The <code>state</code> parameter is OAuth's CSRF defence. The client
       generates a random value, sends it in step 2, and checks it matches when the
@@ -159,7 +158,7 @@ does it also accept?
     </p>
     <p>
       The consequence is more interesting than "CSRF." It's the reverse of what
-      people expect — the attacker doesn't steal the victim's identity, they
+      people expect. The attacker doesn't steal the victim's identity, they
       <em>plant their own</em>:
     </p>
 
@@ -169,7 +168,7 @@ does it also accept?
 
     <p>
       The attacker starts an OAuth flow with <em>their own</em> Google account,
-      grabs the resulting code, and — crucially — doesn't use it. They send the
+      grabs the resulting code, and, crucially, doesn't use it. They send the
       victim a callback link carrying that code. The victim, already logged into
       the client, follows it; the client redeems the attacker's code and links the
       victim's account to the <em>attacker's</em> Google identity. Now the attacker
@@ -182,28 +181,38 @@ does it also accept?
     <h3>3. Code / token leakage via Referer and redirect chains</h3>
     <p>
       Even with a strict allowlist, the code can leak <em>after</em> it lands. If
-      the callback page loads any third-party resource — an analytics script, an
-      ad, an external image — while the code is still in the URL, that code goes
-      out in the <code>Referer</code> header to every one of them.
+      the callback page loads any third-party resource, an analytics script, an
+      ad, an external image, while the code is still in the URL, that code goes out
+      in the <code>Referer</code> header to every one of them.
     </p>
     <pre>Referer: https://client.com/callback?code=SFY39...&amp;state=xyz</pre>
     <p>
       Anyone receiving that request now has the code. Chain it with the
       redirect_uri weakness from the first issue and you have a full path: divert
-      or leak the code, redeem it, done. I check what the callback page loads
-      while the code is still in the address bar, whether the code is swapped for
-      a session before any third-party request fires, and whether it's single-use
+      or leak the code, redeem it, done. I check what the callback page loads while
+      the code is still in the address bar, whether the code is swapped for a
+      session before any third-party request fires, and whether it's single-use
       and short-lived so a leaked one is already dead.
     </p>
 
     <h2>What I still find awkward</h2>
-    <!--
-    EDIT — optional, in your own words. One honest thing you still find fiddly
-    about OAuth testing. Ideas: PKCE's exact role and when it does/doesn't help;
-    telling a genuine implicit-flow finding from a non-issue; reasoning about
-    token audience across many services. One or two lines. Delete if you'd rather
-    end on issue 3.
-    -->
+    <p>
+      Where to store the token on a client-side rendered site. The advice goes in
+      a circle, and every option has a real problem:
+    </p>
+    <ul class="pubs">
+      <li>Use a JWT to protect your site and APIs. Fine, until you have to store it somewhere in the browser.</li>
+      <li>Don't put it in <code>localStorage</code>, because any XSS on the page can read it straight out and exfiltrate it.</li>
+      <li>Use <code>sessionStorage</code> then. Except that's readable by JavaScript too, so XSS gets it just the same.</li>
+      <li>So keep it in an <code>HttpOnly</code> cookie, which JavaScript can't read. But now you're back to sending a cookie, which reopens the CSRF questions this whole post is about, and you need SameSite and anti-CSRF tokens again.</li>
+    </ul>
+    <p>
+      There's no clean answer that's both XSS-proof and CSRF-proof by storage
+      alone. In practice it comes down to an HttpOnly, Secure, SameSite cookie for
+      the session plus genuinely fixing your XSS, rather than hoping a storage
+      choice saves you. But I still don't love that the "right" answer is really
+      "pick your risk and mitigate it properly," and I'm not fully settled on it.
+    </p>
 
     <p><a class="back" href="../index.html#writing">Back to writing</a></p>
   </div>
