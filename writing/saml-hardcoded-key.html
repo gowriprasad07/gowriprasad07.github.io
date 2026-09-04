@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A hardcoded SAML signing key, and logging in as anyone · gp_sec</title>
+<meta name="description" content="The private key that signed SAML login assertions was hardcoded and shared across every install. If you have the key, you can forge a valid login for any user.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0A1013">
+
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="wordmark" href="../index.html">gp_sec</a>
+    <nav aria-label="Sections">
+      <a href="../index.html#findings">Findings</a>
+      <a href="../index.html#contact">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main class="article">
+  <div class="wrap article-inner">
+    <a class="back" href="../index.html#findings">Back to findings</a>
+
+    <p class="dateline">February 2025 · auth</p>
+    <h1>A hardcoded SAML signing key, and logging in as anyone</h1>
+
+    <p>
+      Some bugs are complicated. This one is not, and that's what makes it a good
+      story. A product let you log in with your directory account through SAML. The
+      whole security of SAML rests on one thing: a signature you can't forge. The
+      key used to make that signature was hardcoded in the code and identical on
+      every install. Once I had it, I could sign a login for any user I wanted. No
+      password, no brute-force, just a forged assertion the app trusted completely.
+    </p>
+
+    <h2>How SAML login is supposed to work</h2>
+    <p>
+      SAML is the thing behind a lot of "log in with your company account" flows.
+      Keep the roles simple. There's the <strong>identity provider</strong> (IdP),
+      which knows who you are and vouches for you, and the
+      <strong>service provider</strong> (SP), the app you're trying to get into.
+      When you log in, the IdP produces a signed document, a SAML assertion, that
+      basically says "this is user alice, I've checked, let her in." The app reads
+      that document and logs you in as whoever it names.
+    </p>
+    <p>
+      The only reason the app can trust that document is the signature. The IdP
+      signs the assertion with its private key, and the app verifies it with the
+      matching public key. Anyone can write a document that says "this is alice."
+      What they can't do, in theory, is sign it so the app believes it. The
+      private key is the whole trust anchor. Everything rides on it staying secret.
+    </p>
+
+    <h2>The bug: the private key was in the code</h2>
+    <p>
+      I traced the login through the app to the function that signs the assertion,
+      and followed it to where the signing key came from. It wasn't generated per
+      install, wasn't pulled from a protected store, wasn't unique to the
+      deployment. It was a private key written directly into the product's code,
+      the same key shipped to every customer who installed the software.
+    </p>
+    <blockquote>
+      A signature only means something if one party can make it and nobody else
+      can. A private key that ships inside the product is a private key everyone
+      has. The signature stops proving anything.
+    </blockquote>
+    <p>
+      That single fact breaks the entire model. The app trusts SAML assertions
+      because they're signed with a key only the IdP should hold. But that key was
+      sitting in a file anyone with a copy of the software could read. So I could
+      become the IdP.
+    </p>
+
+    <h2>Forging a login</h2>
+    <p>
+      With the private key in hand, the attack is just "do what the IdP does,
+      myself." I wrote a small script that builds a SAML assertion naming the user
+      I wanted to be, signs it with the extracted key, and produces exactly the
+      kind of response the app expects to receive after a real login.
+    </p>
+    <pre>1. build a SAML assertion:  "this is &lt;target user&gt;, authenticated"
+2. sign it with the hardcoded private key
+3. deliver it to the app's SAML login endpoint
+4. the app verifies the signature, it checks out, and issues a session</pre>
+    <p>
+      The app validated the signature, found it correct (of course it did, it was
+      signed with the real key), trusted the assertion, and handed back a logged-in
+      session for the named user. I took the session cookies from the script's
+      output, dropped them into a browser, refreshed, and I was logged in as that
+      user. Point it at an admin and you have the product.
+    </p>
+    <p>
+      The only precondition is knowing a valid username to impersonate, which for
+      directory accounts is rarely a secret. No password ever entered the picture,
+      because SAML was designed so the app never sees the password. It trusts the
+      signature instead, and the signature was forgeable.
+    </p>
+
+    <h2>The fix</h2>
+    <p>
+      Simple to state, and it's the obvious one: don't hardcode the key. Generate a
+      fresh signing key during installation, unique to that deployment, and keep it
+      out of the shipped code. Then the key on your install is yours alone, an
+      attacker with a copy of the software doesn't have your key, and a forged
+      assertion no longer verifies. The whole attack depends on the key being
+      shared and known; make it unique and secret and there's nothing to forge
+      with.
+    </p>
+
+    <h2>What to take from it</h2>
+    <p>
+      Whenever a system trusts something because it's signed, encrypted, or
+      "verified," my first question now is: where does the key live, and who else
+      has it. A perfect signature check is worthless if the signing key is public,
+      or shipped, or the same everywhere. I look for keys and secrets baked into
+      code or configuration, defaults that never get rotated, and anything
+      described as "the key" in the singular across many installs. The
+      cryptography here was fine. The key management wasn't, and key management is
+      usually where these fall down.
+    </p>
+
+    <p><a class="back" href="../index.html#findings">Back to findings</a></p>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot-inner">
+    <span class="quote">&ldquo;Find the bug. Understand why it works. Make sure it doesn&rsquo;t come back.&rdquo;</span>
+    <span>2026</span>
+  </div>
+</footer>
+</body>
+</html>
