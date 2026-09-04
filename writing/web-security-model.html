@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The browser's security model in plain words: SOP, CORS, SameSite, and the cookie flags — gp_sec</title>
-<meta name="description" content="Same-origin policy, CORS, SameSite, Secure and HttpOnly explained simply — what each one does, and how to actually test them in a browser.">
+<meta name="description" content="SOP, CORS, SameSite, Secure and HttpOnly explained simply, the way I finally understood them, with how I test each in a browser.">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0A1013">
 
@@ -33,36 +33,37 @@
   <div class="wrap article-inner">
     <a class="back" href="../index.html#writing">Back to writing</a>
 
-    <p class="dateline">28 April 2026 · web</p>
+    <p class="dateline">October 2023 · web</p>
     <h1>The browser's security model in plain words</h1>
 
     <p>
-      SOP, CORS, SameSite, Secure, HttpOnly. Five things everyone doing web
-      security is supposed to know, and they get taught as one confusing lump.
-      They confused me for a long time too, until I realised they're not one
-      family — they're two, answering two different questions. Once you split
-      them that way, each one becomes simple. Here's the plain-language version,
-      with how I actually test each in a browser.
+      SOP, CORS, SameSite, Secure, HttpOnly. Five things everyone working in web
+      security are supposed to know, and when searched in google or some article
+      tell you in such a way that you get confused instead of learning about these
+      concepts. They confused me for a long time too, until I realised they're not
+      one family and they're two, answering two different questions. Once you split
+      them that way, each one becomes simple. Here I wrote them in simple language,
+      how I understood and with how I actually test each in a browser.
     </p>
 
     <h2>Two questions, not one topic</h2>
     <p>
-      Everything here is the browser acting as a gatekeeper between websites. The
-      two questions it's answering are:
+      Everything here is our browser agent acting as a gatekeeper between websites.
+      The two questions it's answering are:
     </p>
     <blockquote>
-      Group 1 — SOP, CORS, SameSite: <em>when one site talks to another, whose
-      cookies go along, and who's allowed to read the reply?</em><br>
-      Group 2 — Secure, HttpOnly: <em>how is one individual cookie protected?</em>
+      Group 1 : SOP, CORS, SameSite: when one site (SiteA) talks to another
+      (SiteB), whose cookies go along, and who's allowed to read the reply?<br>
+      Group 2 : Secure, HttpOnly: how is one individual cookie protected?
     </blockquote>
     <p>
-      Keep that split in your head and the whole thing stops being a blur. Let's
-      do the first group, because it's where the interesting attacks live.
+      Keep that split in your head and the whole thing stops being a blur. Let's do
+      the first group, because it's where the interesting attacks live.
     </p>
 
     <h2>First, two words: origin and the cookie jar</h2>
     <p>
-      An <strong>origin</strong> is the combination of scheme + host + port —
+      An <strong>origin</strong> is the combination of scheme + host + port.
       <code>https://bank.com</code> is one origin, <code>http://bank.com</code>
       (different scheme) is another, and <code>https://shop.bank.com</code>
       (different host) is another again. "Same origin" means all three match. This
@@ -71,18 +72,17 @@
     </p>
     <p>
       The <strong>cookie jar</strong> is exactly what it sounds like: the browser
-      keeps a jar of cookies, filed by which site they belong to. When your
-      browser sends a request to <code>bank.com</code>, it automatically reaches
-      into the jar, pulls out <code>bank.com</code>'s cookies — including your
-      login session — and attaches them. You don't do anything; the browser just
-      does it. Hold onto that, because it's the root of the most important idea
-      below.
+      keeps a jar of cookies, filed by which site they belong to. When your browser
+      sends a request to <code>bank.com</code>, it automatically reaches into the
+      jar, pulls out <code>bank.com</code>'s cookies, including your login session,
+      and attaches them. You don't do anything; the browser just does it. Hold onto
+      that, because it's the root of the most important idea below.
     </p>
 
-    <h2>Same-Origin Policy — the surprising part</h2>
+    <h2>Same-Origin Policy, the surprising part</h2>
     <p>
-      Everyone "knows" SOP stops one site from talking to another. That's not
-      quite what it does, and the difference is the whole point.
+      Everyone "knows" SOP stops one site from talking to another. That's not quite
+      what it does, and the difference is the whole point.
     </p>
 
     <figure class="diagram">
@@ -91,37 +91,42 @@
 
     <p>
       So a page on <code>evil.com</code> tells your browser to send a request to
-      <code>bank.com</code>. Does SOP block it? No — the request goes out, and
-      because the browser fills cookies from the jar by destination, <em>your
-      bank session cookie rides along with it</em>. What SOP blocks is the
-      <em>reading</em>: <code>evil.com</code>'s JavaScript is not allowed to see
-      the response that comes back.
+      <code>bank.com</code>. Does SOP block it? No, the request goes out, and
+      because the browser fills cookies from the jar by destination, your bank
+      session cookie rides along with it and goes out from your browser. What SOP
+      blocks is the reading: <code>evil.com</code>'s JavaScript is not allowed to
+      see the response that comes back.
     </p>
     <blockquote>
       SOP doesn't stop the request from being sent. It stops the attacker's page
-      from reading the reply. That one-way gap is exactly why CSRF exists.
+      from reading the reply. That one way gap is exactly why CSRF exists.
     </blockquote>
     <p>
-      CSRF works precisely because the request lands and the cookie goes with it —
-      a state-changing action (transfer money, change email) can succeed even
-      though the attacker never sees the response. They didn't need to see it;
-      they needed it to happen.
+      CSRF works precisely because the request lands and the cookie goes with it, a
+      state-changing action (transfer money, change email) can succeed even though
+      the attacker never sees the response. They didn't need to see it; they needed
+      it to happen. (CSRF is its own topic; I'll leave it there for now.)
     </p>
     <p>
-      <strong>How to see it yourself:</strong> open your browser's DevTools,
-      Network tab, on any site you're logged into. Watch a request go out and look
-      at the request headers — the <code>Cookie</code> header is right there,
-      attached by the browser. Now notice that a cross-site
-      <code>fetch()</code> to another origin still sends, but its response is
-      unreadable to the calling page. That's SOP in one observation.
+      <strong>How to see it yourself:</strong> open your browser's DevTools, Network
+      tab, on any site you're logged into. Watch a request go out and look at the
+      request headers, the <code>Cookie</code> header is right there, attached by
+      the browser. Now notice that a cross-site <code>fetch()</code> to another
+      origin still sends, but its response is unreadable to the calling page. That's
+      SOP in one observation.
+    </p>
+    <p class="misread">
+      Common misunderstanding: "SOP stops evil.com from reaching bank.com." It
+      doesn't. The request reaches bank.com with your cookie; SOP only stops
+      evil.com from reading what comes back.
     </p>
 
-    <h2>CORS — the server choosing to relax SOP</h2>
+    <h2>CORS, the server choosing to relax SOP</h2>
     <p>
       Here's the misconception worth killing: people think CORS is a defence that
-      blocks things. It's the opposite. CORS is how a server <em>opts out</em> of
-      SOP's read-blocking, deliberately, for origins it trusts. By default the
-      browser blocks cross-origin reads; CORS is the server saying "actually,
+      blocks things. It's the opposite. CORS is how a server opts out of SOP's read
+      blocking, deliberately, for origins it trusts. By default the browser blocks
+      cross-origin reads; CORS is the server saying "actually,
       <code>app.mysite.com</code> is allowed to read my responses."
     </p>
     <p>
@@ -130,101 +135,121 @@
     <pre>Access-Control-Allow-Origin: https://app.mysite.com</pre>
     <p>
       <strong>What to test:</strong> the classic bug is a server that reflects
-      whatever origin you send back into that header, effectively trusting
-      everyone. Send a request with a made-up <code>Origin</code> and look at the
-      response:
+      whatever origin you send back into that header, effectively trusting everyone.
+      Send a request with a made-up <code>Origin</code> and look at the response:
     </p>
     <pre>Request:   Origin: https://evil.com
 Response:  Access-Control-Allow-Origin: https://evil.com
            Access-Control-Allow-Credentials: true</pre>
     <p>
-      If the server echoes your evil origin back <em>and</em> allows credentials,
-      an attacker's page can now read authenticated responses — the read-block SOP
-      gave you is gone. Two things I check: whether the origin is reflected rather
-      than matched against a real allowlist, and whether
-      <code>Allow-Credentials: true</code> is paired with a loose origin (the spec
-      forbids it with a wildcard, so people work around it by reflecting, which is
-      the bug). Burp's Repeater is all you need — change the <code>Origin</code>
-      header, resend, read the response headers.
+      If the server echoes your evil origin back and allows credentials, an
+      attacker's page can now read authenticated responses, the read block SOP gave
+      you is gone. Two things I check: whether the origin is reflected rather than
+      matched against a real allowlist, and whether <code>Allow-Credentials: true</code>
+      is paired with a loose origin (the spec forbids it with a wildcard, so people
+      work around it by reflecting, which is the bug). Burp's Repeater is all you
+      need, change the <code>Origin</code> header, resend, read the response headers.
+    </p>
+    <p class="misread">
+      Common misunderstanding: "CORS protects my API." CORS doesn't restrict who can
+      send a request; it only controls who's allowed to read the reply. A permissive
+      CORS config makes things less safe, not more.
     </p>
 
-    <h2>SameSite — deciding if the cookie even shows up</h2>
+    <h2>SameSite, deciding if the cookie even shows up</h2>
     <p>
       SameSite is a cookie setting that steps in one layer earlier than the others:
-      it decides whether the browser attaches the cookie <em>at all</em> on a
-      cross-site request. It's the most direct answer to the CSRF problem above,
-      because if the session cookie doesn't ride along, the cross-site request
-      arrives logged-out and harmless.
+      it decides whether the browser attaches the cookie at all on a cross-site
+      request. It's the most direct answer to the CSRF problem above, because if the
+      session cookie doesn't ride along, the cross-site request arrives logged-out
+      and harmless.
     </p>
     <p>
-      Three values, in plain terms: <strong>Strict</strong> — never send the
-      cookie on any cross-site request, even when the user clicks a normal link to
-      the site (safe, occasionally annoying). <strong>Lax</strong> — send it only
-      on top-level navigations the user actually initiated, like clicking a link,
-      but not on background requests like a hidden form POST or an image
-      (a sensible default, and now the browser default). <strong>None</strong> —
-      always send it cross-site, the old behaviour, and it now requires the
-      <code>Secure</code> flag.
+      If there are two sites (SiteA and SiteB), and the user clicks a link in SiteA
+      such as <code>http://SiteB.com/page</code>, then the browser doesn't attach
+      SiteB's cookie when the request started at SiteA's origin, because the two
+      origins are completely different.
     </p>
     <p>
-      <strong>What to test:</strong> in DevTools, Application tab (Chrome) or
-      Storage (Firefox), open Cookies and read the SameSite column for the session
-      cookie. If it's <code>None</code> — or blank on an older stack that defaults
-      to none — then cross-site requests carry the session, and CSRF is back on
-      the table unless something else stops it. Also worth knowing: Lax-by-default
-      narrowed CSRF but didn't kill it. A state change reachable by a top-level
-      <code>GET</code> still goes through, because that's a user-initiated
-      navigation Lax allows.
+      Three values, in plain terms: <strong>Strict</strong>, never send the cookie
+      on any cross-site request, even when the user clicks a normal link to the site
+      (safe, occasionally annoying). <strong>Lax</strong>, send it only on top-level
+      navigations the user actually initiated, like clicking a link, but not on
+      background requests like a hidden form POST or an image (a sensible default,
+      and now the browser default). <strong>None</strong>, always send it cross-site,
+      the old behaviour, and it now requires the <code>Secure</code> flag.
+    </p>
+    <p>
+      <strong>What to test:</strong> in DevTools, Application tab (Chrome) or Storage
+      (Firefox), open Cookies and read the SameSite column for the session cookie. If
+      it's <code>None</code>, or blank on an older stack that defaults to none, then
+      cross-site requests carry the session, and CSRF is back on the table unless
+      something else stops it. Also worth knowing: Lax-by-default narrowed CSRF but
+      didn't kill it. A state change reachable by a top-level <code>GET</code> still
+      goes through, because that's a user-initiated navigation Lax allows.
+    </p>
+    <p class="misread">
+      Common misunderstanding: "SameSite=Lax stops CSRF completely." It doesn't. A
+      state change reachable by a top-level GET still slips through, because Lax
+      allows user-initiated navigations.
     </p>
 
     <h2>Now the second group: Secure and HttpOnly</h2>
     <p>
-      These two are smaller and simpler, and — this is the bit that untangles the
-      confusion — they're not about origins at all. They protect a single cookie
-      in two different ways.
+      These two are smaller and simpler, and, this is the bit that removes the
+      confusion, they're not about origins at all. As mentioned at the start they
+      protect a single cookie in two different ways.
     </p>
     <p>
-      <strong>Secure</strong> means the cookie is only ever sent over HTTPS. Set
-      it, and the browser refuses to attach the cookie to a plain
-      <code>http://</code> request, so it can't leak over an unencrypted
-      connection someone's sniffing. It's about the transport.
+      <strong>Secure</strong> means the cookie is only sent over HTTPS. Set it, and
+      the browser refuses to attach the cookie to a plain <code>http://</code>
+      request, so it can't leak over an unencrypted connection someone's sniffing.
+      It's about the transport.
+    </p>
+    <p class="misread">
+      Common misunderstanding I had myself: "if the site is HTTPS, why do I even
+      need the Secure flag?" Even on an HTTPS site, if a user types
+      <code>http://example.com</code> or clicks an old link, the first request can
+      start on plain HTTP before redirecting. Without the Secure flag the browser
+      will happily attach and send existing session cookies in clear text on that
+      first unencrypted hop.
     </p>
     <p>
       <strong>HttpOnly</strong> means JavaScript can't read the cookie.
-      <code>document.cookie</code> simply won't return it. This is the one that
-      blunts cookie theft via XSS — if an attacker gets script running on your
-      page but the session cookie is HttpOnly, they can't read it out and exfiltrate
-      it. It's about script access.
+      <code>document.cookie</code> simply won't return it. This is the one that stops
+      cookie theft via XSS, if an attacker gets script running on your page but the
+      session cookie is HttpOnly, they can't read it out and exfiltrate it. It's
+      about script access.
     </p>
     <p>
-      <strong>What to test:</strong> same Cookies panel in DevTools — there are
-      literal <code>Secure</code> and <code>HttpOnly</code> columns, each a
-      checkbox. For any session or auth cookie, both should be ticked. Then try
-      the HttpOnly one directly: open the console and type
-      <code>document.cookie</code>. An HttpOnly cookie won't appear in the output,
-      even though it's clearly in the request headers. Seeing a session cookie
-      show up in <code>document.cookie</code> is an immediate finding.
+      <strong>What to test:</strong> same Cookies panel in DevTools, there are literal
+      <code>Secure</code> and <code>HttpOnly</code> columns, each a checkbox. For any
+      session or auth cookie, both should be ticked. Then try the HttpOnly one
+      directly: open the console and type <code>document.cookie</code>. An HttpOnly
+      cookie won't appear in the output, even though it's clearly in the request
+      headers. Seeing a session cookie show up in <code>document.cookie</code> is an
+      immediate finding.
     </p>
 
     <h2>And CSP, which sits somewhere else entirely</h2>
     <p>
-      One more you'll meet in the same breath, so it's worth placing:
-      <strong>Content-Security-Policy</strong>. It's not about origins or cookies —
-      it answers a third question: <em>what is this page allowed to load and
-      run?</em> It's a header that whitelists where scripts, styles, and images may
-      come from, and it's primarily an XSS mitigation. Different question, different
-      layer — which is exactly why lumping it in with the other five is what makes
+      One more you'll meet in the browser security terminology, so it's worth
+      placing: <strong>Content-Security-Policy</strong>. It's not about origins or
+      cookies, it answers a third question: what is this page allowed to load and
+      run? It's a header that whitelists where scripts, styles, and images may come
+      from, and it's primarily an XSS mitigation. Different question, different
+      layer, which is exactly why grouping it in with the other five is what makes
       people's heads spin. I'll give it its own note another time.
     </p>
 
     <h2>The one-line map</h2>
     <p>
       If you remember nothing else: <strong>SOP</strong> blocks reading the reply
-      (not sending the request). <strong>CORS</strong> is the server relaxing that.
+      (not sending the request). <strong>CORS</strong> is the server relaxing SOP.
       <strong>SameSite</strong> decides if the cookie is even attached.
-      <strong>Secure</strong> keeps a cookie on HTTPS. <strong>HttpOnly</strong>
-      keeps it away from JavaScript. And <strong>CSP</strong> controls what the
-      page can load. Six answers, and now they don't blur together.
+      <strong>Secure</strong> keeps a cookie only on HTTPS. <strong>HttpOnly</strong>
+      keeps the cookie away from JavaScript. And <strong>CSP</strong> controls what
+      the page can load. Six answers, and now they don't blur together.
     </p>
 
     <p><a class="back" href="../index.html#writing">Back to writing</a></p>
