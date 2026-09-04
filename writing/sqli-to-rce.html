@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SQL injection that writes its way to code execution · gp_sec</title>
+<meta name="description" content="A search parameter was SQL injectable. Instead of just reading data, the injection wrote to config tables, planted a command, disabled the safety check, and got RCE.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0A1013">
+
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="wordmark" href="../index.html">gp_sec</a>
+    <nav aria-label="Sections">
+      <a href="../index.html#findings">Findings</a>
+      <a href="../index.html#contact">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main class="article">
+  <div class="wrap article-inner">
+    <a class="back" href="../index.html#findings">Back to findings</a>
+
+    <p class="dateline">January 2026 · sqli</p>
+    <h1>SQL injection that writes its way to code execution</h1>
+
+    <p>
+      SQL injection is usually filed under "read data you shouldn't." This one was
+      more fun, because reading wasn't the interesting part. The app had a feature
+      that could run a custom script, guarded by a safety flag. The injection let
+      me <em>write</em> to the tables behind that feature, so I planted my own
+      command, flipped the safety flag off, and triggered it. A low-privilege user
+      turned a search box into code execution on the server. It's a good reminder
+      that a write-capable SQLi is often much worse than the data leak it looks
+      like at first.
+    </p>
+
+    <h2>The injection</h2>
+    <p>
+      One of the reporting features had a search parameter that went into a query
+      built by string concatenation rather than a parameterised statement. Classic
+      SQL injection. A low-privilege user (an operator) had access to the report,
+      intercepted the request, and the search parameter carried straight into the
+      SQL.
+    </p>
+    <p>
+      The first thing anyone does with SQLi is prove it reads data. A UNION-based
+      payload let me pull user records out of the auth tables, IDs, names, domains,
+      the usual. That alone is a serious leak. But the database user the app
+      connects as could do more than read, and that's where it got interesting.
+    </p>
+    <pre>SEARCH = validvalue' UNION ALL SELECT ... FROM users_table -- </pre>
+
+    <h2>From reading to writing</h2>
+    <p>
+      Because I can inject arbitrary SQL, and the app's database account had write
+      permission, I wasn't limited to <code>SELECT</code>. I could end the intended
+      query and run an <code>UPDATE</code> against any table the account could
+      touch. That turns "leak some rows" into "change the application's stored
+      configuration," which is a completely different level of impact.
+    </p>
+    <p>
+      The product had a feature for running a custom script, used for legitimate
+      automation. Two things in the database controlled it: a row holding the
+      actual command to run, and a system parameter that said whether scripts must
+      pass a safety check before executing. Both were just rows in tables. And I
+      could write to rows.
+    </p>
+
+    <h2>The chain to RCE</h2>
+    <p>
+      Three writes, then a trigger.
+    </p>
+    <p>
+      <strong>Plant the command.</strong> Update the row that holds the custom
+      script command, setting it to whatever I want the server to run. For a proof
+      of concept, the classic harmless choice:
+    </p>
+    <pre>...; UPDATE script_config SET command = 'calc.exe' WHERE id = 1; --</pre>
+    <p>
+      <strong>Disable the safety check.</strong> There was a system parameter that
+      forced scripts through a safe-execution guard. Set it to false, and that
+      guard is gone:
+    </p>
+    <pre>...; UPDATE system_params SET value = 'false'
+      WHERE name = 'script_safe_execution'; --</pre>
+    <p>
+      <strong>Trigger it.</strong> The custom script runs as part of a normal
+      product action, in this case a password-reset flow. Perform that action and
+      the planted command executes on the server. In a real test that means
+      <code>calc.exe</code> popping up, the polite way of proving you have code
+      execution without doing anything destructive.
+    </p>
+    <blockquote>
+      The safety flag and the command were both just rows in a table. Once the
+      injection could write rows, the feature's guard was one UPDATE away from off,
+      and the command was one UPDATE away from mine.
+    </blockquote>
+
+    <h2>The bonus: account takeover</h2>
+    <p>
+      The same write primitive gives an easier win too. The password hashes live in
+      a table. Update the admin's row to a hash I know the password for, clear any
+      secondary auth data tied to that account, and log in as admin with a password
+      I set. No script feature needed, just writing to the auth tables directly.
+      That it can do <em>either</em> full RCE or a clean admin takeover shows how
+      much a write-capable SQLi hands you.
+    </p>
+
+    <h2>Why it's a 9.9</h2>
+    <p>
+      Start as a low-privilege operator, end with a command running on the server,
+      or with the admin account. No prior admin access, no separate vulnerability
+      needed for the escalation, the SQLi carries the whole thing. When an
+      injection can write, "SQL injection" and "remote code execution" can be the
+      same finding, and that's why a write-capable one sits near the top of the
+      severity scale.
+    </p>
+
+    <h2>The fix</h2>
+    <p>
+      The root fix is the boring, correct one: parameterised queries. Don't build
+      SQL by pasting user input into a string; use a prepared statement so the
+      input can only ever be a value, never query structure.
+    </p>
+    <pre>// vulnerable
+"SELECT * FROM products WHERE category = '" + input + "'"
+
+// fixed
+PreparedStatement ps =
+    conn.prepareStatement("SELECT * FROM products WHERE category = ?");
+ps.setString(1, input);</pre>
+    <p>
+      Worth adding as defence in depth: the application's database account
+      shouldn't have more rights than it needs. If that account couldn't write to
+      the config and auth tables in the first place, an injection would still be a
+      leak, but it wouldn't have been an RCE. Least privilege on the DB account
+      doesn't fix the bug, but it caps how bad the bug can get.
+    </p>
+
+    <h2>What to take from it</h2>
+    <p>
+      When I find SQL injection now, "can it read" is only the first question. The
+      one that decides severity is "can it write, and what can it write to." A
+      write primitive against configuration or auth tables is often a path to code
+      execution or account takeover, not just disclosure. And any time a security
+      control is stored as a value in the database, a boolean flag, an allowlist, a
+      role, ask what happens if an attacker can flip it. Here, one of the guards
+      protecting a dangerous feature was a single word in a table, and the whole
+      exploit turned on being able to change it.
+    </p>
+
+    <p><a class="back" href="../index.html#findings">Back to findings</a></p>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot-inner">
+    <span class="quote">&ldquo;Find the bug. Understand why it works. Make sure it doesn&rsquo;t come back.&rdquo;</span>
+    <span>2026</span>
+  </div>
+</footer>
+</body>
+</html>
