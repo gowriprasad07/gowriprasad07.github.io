@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chaining CSRF and an XS-Leak to map an internal network · gp_sec</title>
+<meta name="description" content="A GET-based CSRF on a network tool, plus a timing side-channel, let an external site figure out which internal hosts exist. Root cause and fix.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0A1013">
+
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="wordmark" href="../index.html">gp_sec</a>
+    <nav aria-label="Sections">
+      <a href="../index.html#findings">Findings</a>
+      <a href="../index.html#contact">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main class="article">
+  <div class="wrap article-inner">
+    <a class="back" href="../index.html#findings">Back to findings</a>
+
+    <p class="dateline">February 2024 · web</p>
+    <h1>Chaining CSRF and an XS-Leak to map an internal network</h1>
+
+    <p>
+      This one is a favourite because on its own each bug looks minor, but chained
+      together they let an outside website, with no account and no access, figure
+      out which machines exist inside a private network. It started as a plain
+      CSRF that everyone agreed was low impact, and turned into something more
+      interesting once I added a timing trick on top. It's a nice example of why
+      "low severity on its own" and "low severity once chained" are different
+      questions.
+    </p>
+
+    <h2>The setup</h2>
+    <p>
+      A network monitoring product I was testing had a set of built-in tools:
+      ping, traceroute, SNMP ping, and so on. An admin uses them to check whether
+      a device on the network is reachable. The tools were triggered by a simple
+      GET request, something like <code>/tools/getPing?ipOrHost=10.0.0.5</code>.
+      The server would try to reach that host and respond based on whether it
+      answered.
+    </p>
+
+    <h2>Bug one: the tool runs on a GET</h2>
+    <p>
+      The first problem is that a state-affecting, server-side action, "go reach
+      out to this host," happens on a GET request with no CSRF protection. That
+      matters because of how browsers treat requests to other sites.
+    </p>
+    <p>
+      When you're logged into an app, your browser attaches that app's session
+      cookie to <em>every</em> request going to it, including requests started by a
+      completely different website. So if you're logged into the monitoring tool
+      and then visit my page, my page can quietly make your browser fire that GET,
+      with your session attached, and the server runs the ping as you. That's
+      CSRF. The usual defence is a CSRF token, but tokens are checked on
+      state-changing methods like POST, not on plain GETs, which is exactly why
+      "do real actions over GET" is a problem.
+    </p>
+    <p>
+      On its own, the product team's first reaction was fair: so what? The
+      attacker can make the server ping something, but they can't see the
+      response, because the same-origin policy stops my page from reading a reply
+      that came from another origin. A blind ping isn't worth much. That's where
+      the second bug comes in.
+    </p>
+
+    <h2>Bug two: a timing side-channel (XS-Leak)</h2>
+    <p>
+      I can't <em>read</em> the response, but I don't need to. I just need to tell
+      two cases apart: did the pinged host exist or not? And those two cases take
+      different amounts of time.
+    </p>
+    <p>
+      If the target host exists, it answers quickly and the tool returns fast. If
+      the host doesn't exist, the tool waits for a timeout before giving up, which
+      takes several seconds. That time difference leaks the answer. This kind of
+      trick, learning something about a cross-origin response without reading it,
+      is called an XS-Leak (cross-site leak), and timing is one of the classic
+      forms.
+    </p>
+    <p>
+      So the attack page opens the tool URL for a host it wants to probe, then
+      measures how long until the request settles. The browser won't let it read
+      the result, but it can watch the clock:
+    </p>
+    <pre>function probe(host) {
+    const url = "https://monitor-app/tools/getPing?ipOrHost=" + host;
+    const win = window.open(url);
+    const start = performance.now();
+
+    (function measure() {
+        try {
+            win.origin;              // throws while the cross-origin page is loading
+            setTimeout(measure, 0);
+        } catch (e) {
+            const elapsed = performance.now() - start;
+            console.log(host, elapsed > 7000 ? "does not exist" : "exists");
+        }
+    })();
+}
+
+probe("192.168.1.254");   // slow  -> does not exist
+probe("10.0.0.32");       // fast  -> exists</pre>
+    <p>
+      Reading the exact response is blocked, but the <em>time it took</em> is not
+      protected by anything. Fast means the host is alive; slow means it timed
+      out. Run it across a range of addresses and you've mapped which internal
+      hosts exist, all from an external website, with the victim only needing to
+      be logged in and visit one page.
+    </p>
+    <blockquote>
+      The response was protected. The timing wasn't. A side-channel doesn't need
+      to read the answer, it just needs the answer to change something it can
+      measure.
+    </blockquote>
+
+    <h2>Why the chain matters</h2>
+    <p>
+      This is the part I had to argue for, and I think it's the real lesson. The
+      CSRF alone was genuinely low: fire a blind request, see nothing. The timing
+      difference alone was nothing without a way to trigger the request
+      cross-site. Put them together and an unauthenticated outsider can discover
+      internal network layout, which is real reconnaissance value, especially as a
+      first step chained with something else later. Judging each bug in isolation
+      missed the actual risk. You have to ask what a finding unlocks, not just what
+      it is.
+    </p>
+    <p>
+      It stays a moderate issue, not a critical one, and I said so at the time.
+      But "low on its own" and "low once you chain it" are different sentences, and
+      the gap between them is where a lot of interesting findings live.
+    </p>
+
+    <h2>The fix</h2>
+    <p>
+      Two things, and they line up with the two bugs.
+    </p>
+    <p>
+      Make these tool actions <strong>POST</strong> requests and turn on CSRF
+      protection for them. A real, state-affecting action should never be a GET,
+      because GET is where CSRF slips past. Once the action needs a POST with a
+      valid CSRF token, an external page can't trigger it in the first place, and
+      the whole chain falls apart at step one.
+    </p>
+    <p>
+      That single change kills both bugs at once. Without the ability to trigger
+      the request cross-site, the timing side-channel has nothing to time. It's a
+      good reminder that fixing the entry point of a chain is often cheaper and
+      more complete than trying to patch each link.
+    </p>
+
+    <h2>What to take from it</h2>
+    <p>
+      Two habits came out of this one. First, treat "action over GET" as a smell
+      worth chasing, even when the immediate impact looks nil, because GET plus a
+      side-channel can go further than it first appears. Second, when a response
+      you can't read still <em>behaves</em> differently in two cases, whether by
+      timing, by an error versus success, by size, that difference is often
+      leakable. Reading the response is only one way to learn its secret.
+    </p>
+
+    <p><a class="back" href="../index.html#findings">Back to findings</a></p>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot-inner">
+    <span class="quote">&ldquo;Find the bug. Understand why it works. Make sure it doesn&rsquo;t come back.&rdquo;</span>
+    <span>2026</span>
+  </div>
+</footer>
+</body>
+</html>
