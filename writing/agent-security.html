@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Checking the security posture of an endpoint agent — gp_sec</title>
+<meta name="description" content="What to check when an agent runs on user machines and talks to a central server: permissions, key storage, logging, transport, and identity. Test cases from 30+ real findings.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0A1013">
+
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="wordmark" href="../index.html">gp_sec</a>
+    <nav aria-label="Sections">
+      <a href="../index.html#writing">Writing</a>
+      <a href="../index.html#contact">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main class="article">
+  <div class="wrap article-inner">
+    <a class="back" href="../index.html#writing">Back to writing</a>
+
+    <p class="dateline">September 2024 · infra</p>
+    <h1>Checking the security posture of an endpoint agent</h1>
+
+    <p>
+      A lot of products ship an agent, a small program that runs on the user's
+      machine and talks to a central server. Monitoring tools, endpoint managers,
+      backup clients, they all follow the same shape. I spent a good while testing
+      these, and across a range of agents I found 30+ security issues. Almost none
+      of them were clever exploits. They were the same handful of setup mistakes,
+      repeated. So I turned what I found into a set of reusable checks, and that's
+      what this post is: the areas worth looking at whenever an agent is in scope,
+      on-prem or in the cloud.
+    </p>
+
+    <h2>What the setup looks like</h2>
+    <p>
+      Before the checks, picture the shape of it. One server hands out tokens and
+      keys and verifies each agent. Many agents run out on user machines, each
+      keeping some secrets locally so it can authenticate back to the server.
+    </p>
+
+    <figure class="diagram">
+      <img src="../agent-setup.svg" alt="A central management server connected to three endpoint agents running on user machines. Each agent keeps a local key store holding tokens, database files and registry entries. The links use HTTPS and mTLS.">
+    </figure>
+
+    <p>
+      Two things jump out once you draw it. Every line between an agent and the
+      server is a channel someone can sit on. And every agent is holding secrets
+      on a machine you don't fully control, a machine that has other users on it.
+      Most of my findings lived in that second place, the local key store, because
+      it's easy to forget that "on the user's own machine" is not the same as
+      "safe."
+    </p>
+
+    <h2>The areas I check</h2>
+    <p>
+      These group into five questions. Each one is where real issues showed up.
+    </p>
+
+    <h3>1. File and folder permissions</h3>
+    <p>
+      The agent's folder holds config, databases, sometimes keys. If those files
+      are readable by any standard user on the machine, then a low-privileged user,
+      or malware running as one, can walk in and read secrets meant only for the
+      agent. This was the most common issue I found, and the easiest to miss,
+      because on the developer's own admin machine everything "works." Check the
+      actual permissions on the agent directory and every sensitive file in it, as
+      a normal non-admin user.
+    </p>
+
+    <h3>2. How keys and tokens are stored</h3>
+    <p>
+      This is where most of the damage sat. A few things to look at, each of which
+      I found broken somewhere:
+    </p>
+    <ul class="pubs">
+      <li>Tokens or keys sitting in <strong>plaintext</strong> instead of encrypted. If you can open the file and read the secret, so can anyone else on the box.</li>
+      <li><strong>Database files</strong> (the <code>.db</code> in the agent folder) left unencrypted and not password-protected, so any user can open them and read what's inside.</li>
+      <li>A <strong>default password</strong> on those databases, the same one for every install, with no way to change it. One leaked default unlocks every agent everywhere.</li>
+      <li><strong>Hardcoded keys</strong> in the code, for example a master key used to decrypt session keys. Once someone pulls it out of the binary, every agent using it is open.</li>
+      <li>Secrets in the <strong>registry</strong> without restricted permissions. The registry is not a safe place by default; if you must use it, lock the key down to the agent owner only.</li>
+    </ul>
+    <p>
+      The theme across all of these: encryption at rest, unique secrets per install,
+      and permissions that actually restrict who can read them.
+    </p>
+
+    <h3>3. Logging</h3>
+    <p>
+      Logs are the quiet leak. If the agent writes authentication tokens, keys, or
+      other secrets into its log files, then a secret that was carefully encrypted
+      at rest is now sitting in plaintext in a log that a normal user can read. I
+      found tokens and keys printed straight into logs more than once. Grep the log
+      output for anything that looks like a token or key while the agent runs
+      normally.
+    </p>
+
+    <h3>4. The channel to the server</h3>
+    <p>
+      Everything the agent and server say to each other travels over the network.
+      Two checks:
+    </p>
+    <ul class="pubs">
+      <li><strong>Is HTTPS actually enforced?</strong> Not "supported", enforced. If the agent will also talk plain HTTP, an attacker on the network can force it down to HTTP and read the tokens in transit. Several agents I looked at supported HTTP and shared tokens in clear text over it.</li>
+      <li><strong>Does the server verify the agent, not just encrypt the channel?</strong> HTTPS stops eavesdropping, but on its own it doesn't prove the thing connecting is a real agent. Client certificates (mTLS), where the server only accepts agents presenting an authorized certificate, close that gap. Without it, anything that has a valid token can pretend to be an agent.</li>
+    </ul>
+
+    <h3>5. Agent identity</h3>
+    <p>
+      Each agent should have its own identity and its own keys. Two problems I'd
+      look for: a <strong>shared decryption key</strong> across every agent in an
+      install, so cracking one cracks all of them, and no <strong>unique agent
+      ID</strong>, so the server can't tell agents apart and one agent could read
+      or influence data meant for another. The fix for both is the same idea:
+      unique credentials per agent, and a real identity the server checks.
+    </p>
+
+    <h2>Two things worth adding since</h2>
+    <p>
+      That list came out of what I found at the time. A couple of things sit
+      alongside it that are worth folding in:
+    </p>
+    <p>
+      <strong>Token lifetime and rotation.</strong> Storage is half the story; the
+      other half is how long a leaked secret stays useful. Short-lived tokens that
+      rotate mean a token pulled off a machine is dead soon after, instead of
+      forever. If the agent holds a long-lived static token, that's worth flagging
+      even when it's stored correctly.
+    </p>
+    <p>
+      <strong>Old frameworks and libraries.</strong> An agent built on an
+      end-of-life framework carries whatever known bugs that version has, and no
+      patches are coming. Check what the agent is built on and whether it's still
+      supported. This is boring and it's real; one of my findings was exactly this.
+    </p>
+
+    <h2>The pattern under all of it</h2>
+    <p>
+      Thirty-plus issues, and almost all of them reduce to one wrong assumption:
+      that the user's own machine is a safe place to keep a secret. It isn't. It
+      has other users, other software, and an owner who is not you. So the checks
+      all come back to the same instinct: assume the machine is hostile, and see
+      what a normal user on it can read, intercept, or reuse. If a secret survives
+      that, the agent is in decent shape. Most of the ones I tested didn't, at
+      first.
+    </p>
+
+    <p><a class="back" href="../index.html#writing">Back to writing</a></p>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot-inner">
+    <span class="quote">&ldquo;Find the bug. Understand why it works. Make sure it doesn&rsquo;t come back.&rdquo;</span>
+    <span>2026</span>
+  </div>
+</footer>
+</body>
+</html>
