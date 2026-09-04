@@ -35,6 +35,7 @@
     <nav id="nav" aria-label="Sections">
       <a href="#whoami">About</a>
       <a href="#writing">Writing</a>
+      <a href="#findings">Findings</a>
       <a href="#contact">Contact</a>
     </nav>
   </div>
@@ -207,6 +208,36 @@
               </span>
             </a>
           </li>        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FINDINGS ============ -->
+  <section id="findings" class="band alt">
+    <div class="wrap doc">
+      <div class="margin-note">findings</div>
+      <div class="doc-body">
+        <h2>Bug writeups</h2>
+        <p class="sub">
+          Bugs I found worth writing up, told as the pattern behind them rather
+          than as reports. Product names and internal details are left out; the
+          root cause and the technique are what matter.
+        </p>
+
+        <ul class="posts">
+          <li>
+            <a href="writing/xss-postmessage.html">
+              <span>
+                <span class="post-title">DOM XSS through postMessage, when isTrusted isn't enough</span>
+                <span class="post-meta">A message listener that checked the wrong thing, and an API key fell out</span>
+              </span>
+              <span class="post-side">
+                <span class="post-tag">xss</span>
+                <time datetime="2025-12-29">Dec 2025</time>
+              </span>
+            </a>
+          </li>
+        </ul>
       </div>
     </div>
   </section>
