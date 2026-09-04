@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A loose regex to auth bypass, then SQL injection to admin · gp_sec</title>
+<meta name="description" content="One over-permissive security rule let unauthenticated requests reach protected servlets. One of them had SQL injection through an unquoted column name. Chained, that's a full account takeover.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0A1013">
+
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="wordmark" href="../index.html">gp_sec</a>
+    <nav aria-label="Sections">
+      <a href="../index.html#findings">Findings</a>
+      <a href="../index.html#contact">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main class="article">
+  <div class="wrap article-inner">
+    <a class="back" href="../index.html#findings">Back to findings</a>
+
+    <p class="dateline">July 2025 · web</p>
+    <h1>A loose regex to auth bypass, then SQL injection to admin</h1>
+
+    <p>
+      This is my favourite of the lot. On its own the first bug is "a rule is a
+      bit too generous" and the second is "one query forgot some quotes." Neither
+      sounds like much. Chained, an unauthenticated attacker rewrites the admin's
+      password and logs in as them. It's a clean example of how two small,
+      boring-looking mistakes in different layers stack into a critical, and of
+      why reading config files carefully pays off.
+    </p>
+
+    <h2>The setup: a security filter with rules</h2>
+    <p>
+      The app sat behind a security filter that decides, per request, whether
+      authentication is required. It's driven by rules in a config file. One rule
+      existed to let static assets through without login, images, CSS, fonts, and
+      so on, which is normal. You don't want to force a login just to fetch a
+      <code>.png</code>. The rule looked roughly like this:
+    </p>
+    <pre>&lt;url path="([a-zA-Z0-9\-\./]+)\.(png|jpg|js|css|svg|woff|gif|html|ico|...)"
+     app-roles="PUBLIC"
+     authentication="optional" /&gt;</pre>
+    <p>
+      Read that carefully, because the whole bug is in it. Three things are wrong
+      together.
+    </p>
+
+    <h2>Bug one: the rule matches far more than static files</h2>
+    <p>
+      The regex has no prefix anchor. It doesn't say "the path must start with
+      <code>/static/</code>." It says "any path that <em>ends</em> with one of
+      these extensions." So the filter looks at the whole request URI, and as long
+      as it ends in something like <code>.png</code>, the rule fires and the
+      request is treated as a public, no-auth static file. On top of that the rule
+      allows extra query parameters and requires no authentication at all.
+    </p>
+    <p>
+      Now combine that with how the app routes requests. Plenty of real,
+      privileged servlets are mapped with a wildcard, so a servlet handling
+      <code>/admintool/</code> is actually mapped as <code>/admintool/*</code>,
+      meaning anything under that path reaches it. Put the two facts side by side
+      and the trick appears: append a fake static-file segment to a protected
+      path.
+    </p>
+    <pre>GET /admintool/anything/x.png</pre>
+    <p>
+      The routing sees <code>/admintool/*</code> and hands the request to the
+      privileged admin servlet. The security filter sees a path ending in
+      <code>.png</code> and waves it through as a public static file. The
+      <code>x.png</code> is a lie, it's just there to satisfy the regex. The
+      servlet never gets the authentication it assumed the filter was enforcing.
+    </p>
+    <blockquote>
+      The filter checked what the path looked like, not what it reached. A rule
+      that trusts a file extension is trusting the attacker, because the attacker
+      writes the path.
+    </blockquote>
+    <p>
+      There were dozens of wildcard-mapped servlets reachable this way. That turns
+      one loose rule into a large unauthenticated attack surface. So the next job
+      was to walk those servlets and find one that did something dangerous with
+      input. One did.
+    </p>
+
+    <h2>Bug two: SQL injection through an unquoted column name</h2>
+    <p>
+      One of the now-reachable admin servlets updated a row in a table, and the
+      update was built from a query template like this:
+    </p>
+    <pre>update SomeTable set ${COLUMN} = '${VALUE}' where id = ${ID}</pre>
+    <p>
+      Look at where <code>${COLUMN}</code> sits. The <em>value</em> is inside
+      quotes, so it's treated as data, that part is fine. But the <em>column
+      name</em> is not quoted, because a column name never is, it's an identifier,
+      not a string. And its value comes straight from a request parameter. So
+      whatever I put in the column parameter gets dropped into the SQL as raw
+      query text, not as data. That is textbook SQL injection, just in the one
+      place people forget to check, the identifier position rather than the value
+      position.
+    </p>
+    <p>
+      Because I control raw SQL there, I can end the intended statement and add my
+      own. The goal: rewrite the admin's password hash to one I know, then log in.
+    </p>
+    <pre>... set VERSIONNO = 1 where 1=0;
+    update users set password = '&lt;bcrypt hash of a password I choose&gt;'
+    where id = &lt;admin id&gt;; --</pre>
+    <p>
+      The <code>where 1=0</code> harmlessly finishes the original update, the
+      semicolon starts mine, and the <code>--</code> comments out whatever trailed
+      behind.
+    </p>
+
+    <h2>The one hurdle: no quotes allowed</h2>
+    <p>
+      There was a small catch. Quote characters in the input got escaped, which
+      breaks a payload that needs a string literal for the password hash. This is
+      a very common obstacle in SQL injection, and there's a standard way around
+      it: build the string without ever typing a quote.
+    </p>
+    <p>
+      PostgreSQL's <code>chr()</code> turns an ASCII number into a character, and
+      <code>||</code> concatenates. So instead of writing
+      <code>'abc'</code>, you write <code>chr(97)||chr(98)||chr(99)</code>. No
+      quote characters anywhere, same resulting string. I encoded the whole bcrypt
+      hash that way, and the escaping had nothing to catch.
+    </p>
+    <pre>password = chr(36)||chr(50)||chr(97)||chr(36)|| ...   -- the hash, one char at a time</pre>
+
+    <h2>Putting the chain together</h2>
+    <p>
+      One unauthenticated GET does all of it. The path ends in
+      <code>.png</code> so the filter treats it as a public static file. The
+      wildcard mapping routes it to the admin servlet anyway. The servlet runs the
+      update, and the injected column name carries a second statement that
+      rewrites the admin password to a value I chose, spelled out with
+      <code>chr()</code> so no quote gets escaped. Then I log in as admin with the
+      password I just set.
+    </p>
+    <p>
+      No account, no session, no user interaction. That's why it's a 9.8. An
+      anonymous request on the network becomes full admin control of the product.
+    </p>
+
+    <h2>The fix</h2>
+    <p>
+      The right fix is at bug one, the entry point, and it's small. Anchor the
+      static-file rule to real static paths: require the path to <em>start</em>
+      with the actual asset folders, not merely <em>end</em> with an asset
+      extension. Once the rule only matches things like
+      <code>/static/...png</code>, appending <code>x.png</code> to
+      <code>/admintool/</code> no longer slips past authentication, and every one
+      of those wildcard servlets is behind the login again. The SQL injection
+      should be fixed too, by validating the column name against an allowlist of
+      real columns rather than trusting input, but closing the auth bypass is what
+      collapses the whole chain.
+    </p>
+
+    <h2>What to take from it</h2>
+    <p>
+      Two habits this one sharpened. When I see an allow rule based on a pattern, I
+      now ask what else that pattern matches, not just what it was written for. A
+      rule anchored to the <em>end</em> of a path, or to an extension, is almost
+      always wider than intended. And for SQL injection, I look at the identifier
+      positions, table and column names, not only the value positions. Values are
+      usually parameterised; identifiers usually aren't, and that's where the
+      forgotten injection tends to live. The quote-escaping defence, on its own,
+      stopped nothing, <code>chr()</code> walked right past it, which is a good
+      reminder that escaping one character class is not the same as fixing the
+      injection.
+    </p>
+
+    <p><a class="back" href="../index.html#findings">Back to findings</a></p>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot-inner">
+    <span class="quote">&ldquo;Find the bug. Understand why it works. Make sure it doesn&rsquo;t come back.&rdquo;</span>
+    <span>2026</span>
+  </div>
+</footer>
+</body>
+</html>
