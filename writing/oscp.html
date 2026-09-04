@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>How I passed OSCP: second attempt, 90 points, and what I'd tell myself — gp_sec</title>
-<meta name="description" content="My OSCP journey — failed at 50, passed at 90 on the second try. The prep that worked, the time it took, and the tips I'd give someone starting out.">
+<title>What OSCP really taught me, and what I wasted time on — gp_sec</title>
+<meta name="description" content="My OSCP journey, failed at 50 and passed at 90. The prep that actually worked, the time I wasted, and the tips I'd give someone starting out.">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0A1013">
 
@@ -33,81 +33,77 @@
   <div class="wrap article-inner">
     <a class="back" href="../index.html#writing">Back to writing</a>
 
-    <p class="dateline">6 May 2026 · notes</p>
-    <h1>How I passed OSCP: second attempt, 90 points, and what I'd tell myself</h1>
+    <p class="dateline">27 July 2026 · notes</p>
+    <h1>What OSCP really taught me, and what I wasted time on</h1>
 
     <p>
       I failed my first OSCP attempt with 50 points. On the second, I got 90.
-      Between purchasing PEN-200 and passing, it took six to seven months. This is
-      the write-up I wish I'd read before I started — how I actually prepared,
-      how the exam went, and the things I'd tell someone at the beginning, most
-      of which I learned the slow way.
-    </p>
-
-    <h2>The timeline, honestly</h2>
-    <p>
-      First attempt: 50 points, a fail. Notably, I scored <em>zero</em> on the
-      Active Directory set that time — not a single point. Second attempt: 90, a
-      comfortable pass. Same person, a few months apart. What changed wasn't
-      talent, it was how I practised.
-    </p>
-    <p>
-      On exam day I stopped at around the 22-hour mark, having done enough. The
-      next day I wrote the report, which took me nearly 24 hours on its own. About
-      34 hours after I submitted, I checked my email almost casually and it was
-      already there: OSCP and OSCP+. I'd passed. The report genuinely takes as
-      long as a good chunk of the exam, so plan for it.
+      Between purchasing PEN-200 and passing, it took me six to seven months. This
+      is the write-up I wish I'd read before I started, how I actually prepared,
+      how the exam went, and the things I'd tell someone at the beginning, most of
+      which I learned the slow way.
     </p>
 
     <h2>How I actually prepared</h2>
     <p>
-      My schedule was roughly four hours a day after work, and ten-plus hours on
-      each weekend day. Sustainable enough to keep up for months, which is what it
-      takes.
+      My schedule was roughly four hours a day after work, from 5PM to 11PM
+      (obviously breaks in the middle), and ten-plus hours on each weekend day.
+      Sustainable enough to keep up for months, which is what it takes.
     </p>
     <p>
       My biggest early mistake: I spent about a month and a half trying to learn
-      the theory first, front-loading the coursework. Skip that. The thing that
-      worked was the reverse — start solving labs immediately, and when you get
-      stuck, <em>then</em> go back to the material to learn the concept you're
-      missing. Learning a technique against a real box makes it stick in a way
-      that reading about it never does, and doing both in parallel is far faster
-      than doing them in sequence.
+      the theory first, thought it would help me solve labs or have better
+      knowledge on. Skip that! The thing that worked was the reverse, start solving
+      labs immediately, and when you get stuck, then go back to the material to
+      learn the concept you're missing. Learning a technique against a real box
+      makes it easy to stick in a way that reading never does, and doing both in
+      parallel is far faster than doing them separately.
     </p>
     <p>
       Once I got through the challenge labs, I went to the Proving Grounds boxes.
-      This is where the real preparation happened. I solved something like 140+
-      PG labs — the $19/month Proving Grounds Practice is the single best-value
-      thing in the whole journey. I worked through the well-known community lists
-      (TJ Null's list especially), focused on getting comfortable, and then moved
-      to the harder boxes whenever I had time. If I had to name one thing that
-      turned my 50 into a 90, it's the volume of PG boxes.
+      This is where the real preparation happened. Initially I solved 50+ PG labs
+      which are free, and then during the second attempt I solved something like
+      140+ PG labs overall. The $19/month Proving Grounds Practice is the single
+      best value thing in the whole journey. I worked through the well known
+      community lists (TJ Null's list especially), focused on getting comfortable,
+      and then moved to the harder boxes whenever I had time. If I had to name one
+      thing that turned my 50 into a 90, it's the volume of PG boxes.
     </p>
 
     <h2>Active Directory is simpler than you fear</h2>
     <p>
-      I scored zero on AD the first time, so I understand the dread. But going in
-      the second time, I spent far <em>less</em> effort on AD than on standalones,
-      and it still went fine — it took me eight to nine hours to get the domain
-      controller. I'm no AD expert.
+      As previously mentioned, I scored zero on AD the first time. The reasons: I
+      hadn't followed proper patterns, I looked too deep into things, and I wasn't
+      visualising the AD from a high level flow. But going in the second time, I
+      spent far less effort on AD than on standalones, and it still went fine, it
+      took me six to seven hours to get the domain controller. I'm no AD expert.
     </p>
     <p>
       The reason it's manageable: AD attacks are mostly about abusing behaviour
-      that's <em>supposed</em> to be there. You're not finding exotic memory-corruption
-      bugs, you're taking a credential, seeing what it can reach, using that to
-      get the next credential, and walking across the domain. Once you see it as
-      "abuse existing trust and pass creds around the network," the patterns
-      repeat. Learn the patterns, not a hundred individual tricks.
+      that's supposed to be there. You're not finding exotic memory corruption
+      bugs, you're taking a credential, seeing what it can reach, using that to get
+      the next credential, and walking across the domain. Once you see it as "abuse
+      existing trust and pass creds around the network," the patterns repeat. Learn
+      the patterns, not a hundred individual tricks.
+    </p>
+    <p>
+      Learn the AD concepts, there will be around 10 to 15, like SMB, Kerberos,
+      LDAP, WinRM, RDP, pivoting with Ligolo, creds hunting across SAM, registry,
+      mimikatz and so on. If you know what these are and what they mean in AD, it
+      becomes super easy to comprehend. And don't skip the challenge labs, that is
+      the exact pattern you'll get in the exam machines too.
     </p>
 
     <h2>Standalones: where the footholds hide</h2>
     <p>
-      A couple of pattern notes that saved me time. On Linux boxes, a good chunk
-      of initial footholds come from specific client-side or service
-      vulnerabilities — get fluent in those categories and you'll land the entry.
-      On Windows, initial access from a client or web-side bug is comparatively
-      rare; more often the way in is through SMB, so give that port serious
-      attention rather than burning hours on the web app.
+      A couple of pattern notes that saved me time. On Linux boxes, a good chunk of
+      initial footholds come from specific client side or service vulnerabilities.
+      There are around a dozen attacks performed from client to server, like file
+      upload, path traversal, LFI, direct RCE, SSTI and similar, get fluent in
+      those categories and you'll land the entry. On Windows, initial access from a
+      client or web side bug is comparatively rare; more often the way in is through
+      SMB, so give that port serious attention rather than burning hours on the web
+      app.
     </p>
 
     <h2>The methodology that carried me</h2>
@@ -115,98 +111,119 @@
       More than any single technique, two habits decided my exam.
     </p>
     <p>
-      <strong>Enumeration is a loop, not a step.</strong> Every new thing you find
-      — a login, a hostname, a version number, an error message — sends you back
-      to the start, and not just on the box you found it on. "I scanned it once"
-      does not mean "I'm done." Most things people miss are missed in enumeration,
-      not in the exploit. Re-enumerate after every single login.
+      <strong>Enumeration is a loop, not a step.</strong> Every new thing you find,
+      a login, a hostname, a version number, an error message, sends you back to the
+      start, and not just on the box you found it on. "I scanned it once" does not
+      mean "I'm done." Most things people miss are missed in enumeration, not in the
+      exploit. Re-enumerate after every single login.
     </p>
     <p>
-      <strong>Research in a fixed order.</strong> This is the exact order I use,
-      and having an order stops you thrashing. Google the service and version
-      first — most of the time someone has already written up the technique, and
-      you want the idea before you burn hours. If Google gives you nothing, go to
-      the HackTricks page for that <em>exact</em> port or service; it walks you
-      through enumerating each one. Only then reach for sploitus or searchsploit,
-      when you want a specific exploit — that's for depth, not your first move.
+      <strong>Research in a fixed order.</strong> This is the exact order I use, and
+      having an order stops you from jumping randomly. Google the service and version
+      first, most of the time someone has already written up the technique, and you
+      want the idea before you burn hours. If Google gives you nothing, go to the
+      HackTricks page for that exact port or service; it walks you through
+      enumerating each one. Only then reach for sploitus or searchsploit, when you
+      want a specific exploit, that's for depth, not your first move.
     </p>
     <blockquote>
       A finding is a door, not the finish line. The habit worth more than any tool:
-      never stop at "I found something" — always ask what it actually leads to.
+      never stop at "I found something", always ask what it actually leads to.
     </blockquote>
     <p>
-      That last one is the single most useful thing OSCP taught me, and it's
-      exactly what the exam rewards. An LFI isn't "file read, done" — it's read
-      the config, find a login, get code execution. A file upload isn't the
-      finding — it's land in the web root and get a shell. Chain to impact.
+      That last one is the single most useful thing OSCP taught me, and it's exactly
+      what the exam rewards. An LFI isn't "file read, done", it's read the config,
+      find a login, get code execution. A file upload isn't the finding, it's land
+      in the web root and get a shell. Chain to impact.
     </p>
 
     <h2>Tips I'd give someone starting</h2>
     <p>
       Some of these are mine, some are the standard advice that turned out to be
-      true.
+      true, which I read on the OSCP subreddit.
     </p>
     <p>
-      <strong>Enumeration is key, and nmap isn't enough.</strong> Use more than
-      one tool — enum4linux, nikto, and the rest depending on the service. Scan
-      the full port range, and don't skip UDP just because it's slow; slow is
-      exactly why things hide there. SNMP over UDP has handed me logins and
-      internal detail more than once.
+      <strong>Enumeration is key, and nmap isn't enough.</strong> Use more than one
+      tool, enum4linux, nikto, wpscan kind of enumeration tools, it actually depends
+      on the service and port. Scan the full port range, and don't skip UDP just
+      because it's slow; slow is exactly why things hide there. SNMP over UDP has
+      handed me logins and internal detail more than once.
     </p>
     <p>
-      <strong>Watch for rabbit holes.</strong> Work the low-hanging fruit first.
-      And leave the web app for last — it can be the single biggest time sink on
-      the exam.
+      <strong>Watch for rabbit holes.</strong> Work the low hanging fruit first, and
+      leave the web app for last, it can be the single biggest time sink on the exam.
+      The way to avoid rabbit holes: if you've tried 2 to 3 levels on a particular
+      service or port and there's no result, back out, because that's probably not
+      the way in. One example, if there's an encrypted string from a DB or a config
+      file and you're trying to crack it, and it's taking more than 5 to 10 minutes
+      with John and rockyou, skip it. OSCP won't give you a password that takes more
+      than ten minutes to crack; the ones they set will be near the top of the list,
+      so they're not wasting the attempter's time.
     </p>
     <p>
-      <strong>Don't rely only on what you saw in the labs.</strong> On the exam I
-      hit things I'd never seen before. After you finish enumerating, go port by
-      port, open the HackTricks page for each, and actually try what it lists.
-      Never assume "that wouldn't come up on the exam."
+      <strong>Don't rely only on what you saw in the labs.</strong> On the exam I hit
+      things I'd never seen before. After you finish enumerating, go port by port,
+      open the HackTricks page for each, and actually try what it lists. Never assume
+      "that wouldn't come up on the exam."
     </p>
     <p>
-      <strong>Don't over-stress the report.</strong> I forgot a few screenshots
-      and still passed. You don't need to document every click — the graders know
-      how to use tools. You do not need to explain how you set up and logged into
-      BloodHound, for instance. Report the findings and the proof, not a tutorial.
+      <strong>Don't over-stress the report.</strong> I forgot a few screenshots and
+      still passed. You don't need to document every click, the graders know how to
+      use tools. You do not need to explain how you set up and logged into
+      BloodHound, for instance. Report the findings and the proof.
     </p>
     <p>
-      <strong>An early first attempt can be worth it.</strong> If you're pushing
-      for OSCP fast (three to four months) and the extra $250 doesn't hurt,
-      sitting the exam before you feel fully ready can be a real move. Even if you
-      fail, you learn what the exam actually feels like, and that experience is a
-      big part of what makes the second attempt pass.
+      <strong>An early first attempt can be worth it.</strong> If you're pushing for
+      OSCP fast (three to four months) and the extra $250 doesn't hurt, sitting the
+      exam before you feel fully ready can be a real move. Even if you fail, you learn
+      what the exam actually feels like, and that experience is a big part of what
+      makes the second attempt an easy pass.
     </p>
     <p>
       <strong>Don't give up mid-exam.</strong> Momentum builds. After I finally
-      cracked the AD set, each standalone only took me three to four hours. The
-      early hours are the hardest; it gets faster once you're moving.
+      cracked the AD set, each standalone only took me two to three hours. The early
+      hours are the hardest; it gets faster once you're moving.
     </p>
 
     <h2>Set yourself up once</h2>
     <p>
       Two practical things. Practise in the exact Kali VM you'll sit the exam in,
       through the VPN, so every tool is already installed and tested and nothing
-      surprises you on the day. And keep one notes system open from the very start
-      — Obsidian, CherryTree, whatever — with terminal logging on by default, so
-      your notes fall out of the work instead of being a second job at the end.
-      Sleep and eat during the exam. Your decisions get measurably worse the
-      longer you push without either.
+      surprises you on the day. And keep one notes system open from the very start,
+      Obsidian, CherryTree, whatever, with all the commands you construct written
+      down in it, so you're not googling for tool syntax or operation commands during
+      the exam. Sleep and eat during the exam. Your decisions get measurably worse
+      the longer you push without either.
+    </p>
+
+    <h2>The timeline, honestly</h2>
+    <p>
+      First attempt: 50 points, a fail. Notably, I scored zero on the Active
+      Directory set that time. Second attempt: 90, a comfortable pass. Same person,
+      a few months apart. What changed wasn't talent, it was how I practised and took
+      notes.
+    </p>
+    <p>
+      On exam day I stopped at around the 22-hour mark, having done enough. The next
+      day I wrote the report, which took me nearly 24 hours on its own. About 34
+      hours after I submitted, I checked my mail almost casually and it was already
+      there: OSCP and OSCP+. I passed! The report genuinely takes as long as a good
+      amount of the exam, so don't neglect it.
     </p>
 
     <h2>Was it worth it?</h2>
     <p>
-      Yes — but maybe not only for the certificate. The skills you build getting
-      there are as useful as the three letters, arguably more. It changed how I
-      approach a target: enumerate wider than the obvious, and never stop at the
-      first finding. That's the part that stayed with me long after the exam
-      email arrived.
+      Yes, but maybe not only for the certificate. The skills you build getting there
+      are as useful as the cert, arguably more. It changed how I approach a target:
+      enumerate wider than the obvious, and never stop at the first finding. That's
+      the part that stayed with me long after the exam email arrived.
     </p>
-    <!--
-    EDIT — optional closer, one or two lines in your own voice. Something honest
-    about what you're doing with it now, or one thing you'd still do differently.
-    Delete if you'd rather end on the line above.
-    -->
+    <p>
+      Chain everything and increase the impact, that's the methodology it built for
+      me. Previously if I found an LFI, I'd file it as medium to high and stop there
+      with a single bug. Now I elevate it, try to read system files, reach real
+      access, and show where it actually leads.
+    </p>
 
     <p><a class="back" href="../index.html#writing">Back to writing</a></p>
   </div>
