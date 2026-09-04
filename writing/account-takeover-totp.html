@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Account takeover through an unthrottled TOTP check · gp_sec</title>
+<meta name="description" content="A TOTP verification endpoint with no rate limiting, and a two-request chain that turned a guessable 6-digit code into any user's access token.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0A1013">
+
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="wordmark" href="../index.html">gp_sec</a>
+    <nav aria-label="Sections">
+      <a href="../index.html#findings">Findings</a>
+      <a href="../index.html#contact">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main class="article">
+  <div class="wrap article-inner">
+    <a class="back" href="../index.html#findings">Back to findings</a>
+
+    <p class="dateline">April 2024 · auth</p>
+    <h1>Account takeover through an unthrottled TOTP check</h1>
+
+    <p>
+      This is the kind of bug that makes two-factor authentication worse than
+      useless, because it gives everyone a false sense of safety while quietly
+      handing out accounts. A product I was testing had TOTP as a second factor,
+      the six-digit code from an authenticator app. The verification step for that
+      code had no rate limiting, and the way it was wired let me chain two
+      requests into a full account takeover, admin included. Nothing exotic, just
+      two common mistakes lined up in a row.
+    </p>
+
+    <h2>How the login was meant to work</h2>
+    <p>
+      Two factors, in sequence. You send a username and password, and if TOTP is
+      enabled, the app then asks for the six-digit code. You post the username and
+      the code to a verification endpoint. If the code checks out, the app hands
+      back a short-lived value, call it a "cookie code," which you then exchange at
+      a token endpoint for a real access token. The access token is what actually
+      logs you in and authorises your API calls.
+    </p>
+    <p>
+      So the flow is: verify TOTP, get a cookie code, swap the cookie code for an
+      access token. On paper that's fine. The problem is in the gaps between those
+      steps.
+    </p>
+
+    <h2>Mistake one: no rate limiting on the code check</h2>
+    <p>
+      The TOTP verification request looked roughly like this:
+    </p>
+    <pre>POST /authorization/totp_verification/
+
+username=admin&amp;totp=112959</pre>
+    <p>
+      A TOTP code is six digits. That's a million possibilities, which sounds like
+      a lot until you realise the endpoint accepted attempt after attempt with no
+      throttling, no lockout, no delay. A million tries with no brake is not a
+      million tries, it's a script running for a while. And because the code
+      rotates on a fixed window, you don't even need the whole space; you need to
+      land a valid code inside its lifetime, which a fast unthrottled loop can do.
+    </p>
+    <p>
+      Rate limiting is the entire security model of a six-digit code. Six digits
+      is deliberately small so a human can type it, and the only reason that's
+      acceptable is that you're supposed to get a handful of guesses before the
+      door locks. Remove the lock and the short code stops being a second factor
+      and becomes a speed bump.
+    </p>
+
+    <h2>Mistake two: the code was all you needed</h2>
+    <p>
+      Here's the part that turned a brute-force into a takeover. The verification
+      endpoint took a <em>username</em> and a code. It didn't require anything
+      that proved you'd passed the first factor for that user, no bound secret
+      tied to a successful password step. So I could put <em>any</em> username in,
+      admin included, and just brute-force the code for it directly.
+    </p>
+    <p>
+      When the code finally matched, the response handed back the cookie code for
+      that account:
+    </p>
+    <pre>{
+  "user_type": "existing_user",
+  "code": "&lt;a cookie code, valid for this account&gt;"
+}</pre>
+    <p>
+      Then the second request, exactly as a normal client would do it, exchanges
+      that cookie code for an access token:
+    </p>
+    <pre>POST /oauth2/token/
+
+grant_type=client_credentials
+(cookie code carried as the credential)</pre>
+    <p>
+      And the response is a live token for the account:
+    </p>
+    <pre>{
+  "access_token": "&lt;valid token for the targeted user&gt;",
+  "expires_in": 1800,
+  "token_type": "Bearer",
+  "scope": "read write"
+}</pre>
+    <blockquote>
+      The TOTP step verified the code but never verified that you were the person
+      the code belonged to. Guessing six digits for a username you chose was the
+      whole authentication.
+    </blockquote>
+
+    <h2>Putting it together</h2>
+    <p>
+      Two requests, start to finish. Point the TOTP endpoint at a username,
+      brute-force the six-digit code with no throttling to stop you, take the
+      cookie code from the success response, and swap it for an access token. At
+      the end you hold a valid Bearer token for any account you named, with read
+      and write scope. Choose <code>admin</code> and you own the product.
+    </p>
+    <p>
+      That's why this is a High. No prior access, no phishing, no social step. Pick
+      a target username, run the loop, log in as them.
+    </p>
+
+    <h2>The fix</h2>
+    <p>
+      Both mistakes need closing, and they close in different places.
+    </p>
+    <p>
+      <strong>Rate-limit the verification endpoint.</strong> A small number of
+      failed TOTP attempts should lock the flow, exactly like a password. This
+      alone turns a certain brute-force back into a lottery you'll almost never
+      win inside a code's lifetime.
+    </p>
+    <p>
+      <strong>Bind the TOTP step to the first factor.</strong> The code check
+      should only succeed for a user who has just proven the first factor, by
+      carrying a unique, server-issued value tied to that specific successful
+      login rather than trusting a username the client typed in. Then you can't
+      walk up to the second factor for an arbitrary account and start guessing;
+      you have to have passed the first factor for that exact user first. That's
+      the change that actually restores what two-factor is supposed to mean.
+    </p>
+
+    <h2>What to take from it</h2>
+    <p>
+      Whenever I see a numeric verification step now, OTP, TOTP, an SMS code, I ask
+      the same two questions before anything else. Is it rate limited, and is it
+      bound to the earlier step, or can I request it for any account I like?
+      Either gap on its own is a finding. Both together, as here, is an account
+      takeover. A second factor is only a second factor if the first one still has
+      to happen.
+    </p>
+
+    <p><a class="back" href="../index.html#findings">Back to findings</a></p>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot-inner">
+    <span class="quote">&ldquo;Find the bug. Understand why it works. Make sure it doesn&rsquo;t come back.&rdquo;</span>
+    <span>2026</span>
+  </div>
+</footer>
+</body>
+</html>
