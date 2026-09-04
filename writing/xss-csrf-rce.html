@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stored XSS to RCE, and why "self-XSS" wasn't self at all · gp_sec</title>
+<meta name="description" content="A low-privilege user could store a script in a widget, share its embed link, and run code in an admin's session, all the way to a command on the server.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0A1013">
+
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="wordmark" href="../index.html">gp_sec</a>
+    <nav aria-label="Sections">
+      <a href="../index.html#findings">Findings</a>
+      <a href="../index.html#contact">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main class="article">
+  <div class="wrap article-inner">
+    <a class="back" href="../index.html#findings">Back to findings</a>
+
+    <p class="dateline">January 2025 · xss</p>
+    <h1>Stored XSS to RCE, and why "self-XSS" wasn't self at all</h1>
+
+    <p>
+      I almost threw this one away. My first read was "it's just self-XSS, the
+      user attacks themselves, who cares." Then I noticed one detail that flipped
+      it: the payload had an embed link, and that link delivered the script to
+      whoever opened it. Suddenly a low-privilege user could run code in an admin's
+      session, and from there, in the admin's session, reach an endpoint that runs
+      a command on the server. Stored XSS, then CSRF, then RCE. This is a good
+      lesson in not writing a bug off too early.
+    </p>
+
+    <h2>The feature</h2>
+    <p>
+      The product let users build dashboards, and one widget type accepted custom
+      HTML. That's a script-execution feature by design; whatever HTML and
+      JavaScript you put in the widget runs when the widget renders. Fine on its
+      own, if the only person who ever sees your widget is you.
+    </p>
+    <p>
+      There were two privilege levels that matter here. An <strong>operator</strong>,
+      a low-privilege user, and an <strong>admin</strong>. An operator can create
+      one of these custom-HTML widgets. So an operator can store a script. The
+      only question is who ends up running it.
+    </p>
+
+    <h2>Bug one: stored XSS that looked like self-XSS</h2>
+    <p>
+      An operator creates a custom-HTML widget and puts a script in it. When the
+      operator views their own dashboard, the script runs in the operator's own
+      session. On its face that's self-XSS: you attacked yourself, no victim, low
+      value. That's exactly where a lot of people, including me for a minute, stop
+      looking.
+    </p>
+    <p>
+      The detail that changes everything is that the widget had an
+      <strong>embed link</strong>, a direct URL to render just that widget. The
+      operator can copy that link and send it to someone else. When the
+      <em>admin</em> opens it, the operator's stored script runs in the
+      <em>admin's</em> session. No approval, no prompt, it just executes. That's
+      not self-XSS anymore. That's a low-privilege user getting code running as an
+      admin, which is stored XSS with a delivery mechanism built in.
+    </p>
+    <blockquote>
+      "Self-XSS" is only self-XSS until you find a way to hand the link to someone
+      else. The moment the payload is deliverable, the victim isn't you.
+    </blockquote>
+
+    <h2>Bug two: from XSS to a command, via CSRF</h2>
+    <p>
+      Running script in the admin's session is bad on its own, cookie theft,
+      acting as the admin. But this product had a much sharper edge. There was an
+      admin-only endpoint whose whole job was to run a system command. It's a real
+      feature, gated behind admin and behind a CSRF token so only a legitimate
+      admin action can call it.
+    </p>
+    <p>
+      The problem is that my script is <em>already running in the admin's
+      session</em>. So it can do what the admin's own browser can do. It reads the
+      CSRF token straight out of the page (the same token the app uses to prove the
+      request is genuine), then fires a request to the command endpoint with that
+      token attached:
+    </p>
+    <pre>// running in the admin's session, injected via the widget
+const csrf = /* read the CSRF token from the page */;
+
+fetch("/admin/run-command", {
+    method: "POST",
+    credentials: "include",              // admin's cookies ride along
+    body: "csrftoken=" + csrf + "&command=whoami"
+});</pre>
+    <p>
+      The endpoint sees a valid admin session and a valid CSRF token, because both
+      are real, they belong to the admin whose session my script is riding. It
+      runs the command. The CSRF token was meant to stop a forged cross-site
+      request, but it can't stop a request coming from script <em>inside</em> the
+      page, because that script can just read the token. XSS defeats CSRF
+      protection every time, which is why an XSS that reaches a
+      command-running endpoint is not a medium, it's code execution on the server.
+    </p>
+
+    <h2>The full chain</h2>
+    <p>
+      Put together: an operator, the lowest user that matters, stores a script in a
+      widget, sends its embed link to an admin, the admin opens it, the script runs
+      in the admin's session, reads the admin's CSRF token, and calls the
+      command endpoint with it. The result is an operating-system command running
+      on the server, kicked off by a low-privilege user who only had to get an
+      admin to click one link.
+    </p>
+    <p>
+      This is also a nice example of why judging a bug by its first label misses
+      the point. "Self-XSS" and "medium XSS" both undersell it. Once you follow the
+      chain, stored XSS plus a deliverable link plus a privileged command endpoint
+      is remote code execution.
+    </p>
+
+    <h2>The fix</h2>
+    <p>
+      The clean fix is at the visibility boundary, not the payload. A widget
+      created by a low-privilege user should never render or execute in a
+      higher-privilege user's session, not on their dashboard, and not through a
+      direct embed link either. If the operator's script simply cannot run in the
+      admin's context, the whole chain dies at step one, no matter how the link is
+      delivered.
+    </p>
+    <p>
+      A weaker version of this is to show the admin a warning before rendering
+      untrusted custom HTML, or to require explicit consent. That helps, but it
+      leans on the admin making the right call every time, and one careless click
+      brings the chain back. Blocking execution across the privilege boundary is
+      the fix that doesn't depend on a human noticing. As a rule, a low-privilege
+      user's content executing in a high-privilege context is the actual bug;
+      warnings just ask the victim to defend themselves.
+    </p>
+
+    <h2>What to take from it</h2>
+    <p>
+      Two things stuck with me. First, never file XSS as self-XSS until you've
+      checked every way the payload could reach another user, an embed link, a
+      share feature, a preview, a direct URL to the stored content. Deliverability
+      is the whole difference between "you hacked yourself" and "you hacked the
+      admin." Second, XSS anywhere near a privileged action is worth chasing hard,
+      because script in a victim's session reads their CSRF tokens and does
+      anything they can do. When that "anything" includes an endpoint that runs a
+      command, the XSS was never the ceiling, it was the doorway.
+    </p>
+
+    <p><a class="back" href="../index.html#findings">Back to findings</a></p>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot-inner">
+    <span class="quote">&ldquo;Find the bug. Understand why it works. Make sure it doesn&rsquo;t come back.&rdquo;</span>
+    <span>2026</span>
+  </div>
+</footer>
+</body>
+</html>
