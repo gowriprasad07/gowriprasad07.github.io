@@ -11,13 +11,13 @@
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../styles.css">
 </head>
 <body>
+<div id="progress" aria-hidden="true"></div>
 
 <header class="topbar">
   <div class="wrap topbar-inner">
@@ -26,16 +26,15 @@
       <a href="../notes.html">Notes</a>
       <a href="../findings.html">Findings</a>
       <a href="../index.html#contact">Contact</a>
-      <a class="btn-pill" href="../resume.pdf">Resume</a>
     </nav>
   </div>
 </header>
 
 <main class="article">
   <div class="wrap article-inner">
-    <a class="back" href="../index.html#writing">Back to writing</a>
+    <a class="back" href="../notes.html">Back to all notes</a>
 
-    <p class="dateline">January 2026 · web</p>
+    <p class="dateline">8 January 2026 · web</p>
     <h1>OAuth 2.0 for testers: the flow, and the three things I always check</h1>
 
     <p>
@@ -216,15 +215,18 @@ does it also accept?
       "pick your risk and mitigate it properly," and I'm not fully settled on it.
     </p>
 
-    <p><a class="back" href="../index.html#writing">Back to writing</a></p>
+    <p><a class="back" href="../notes.html">Back to all notes</a></p>
   </div>
 </main>
 
 <footer>
   <div class="wrap foot-inner">
     <span class="quote">&ldquo;Find the bug. Understand why it works. Make sure it doesn&rsquo;t come back.&rdquo;</span>
-    <span>2026</span>
+    <span id="clock">Chennai<span class="sep">·</span><span id="time">--:--:--</span></span>
   </div>
 </footer>
+<script>
+(function(){var t=document.getElementById('time');function tick(){t.textContent=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date())+' IST';}tick();setInterval(tick,1000);})();
+</script>
 </body>
 </html>

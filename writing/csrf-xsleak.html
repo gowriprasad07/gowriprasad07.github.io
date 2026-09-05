@@ -6,24 +6,25 @@
 <title>Chaining CSRF and an XS-Leak to map an internal network · gp_sec</title>
 <meta name="description" content="A GET-based CSRF on a network tool, plus a timing side-channel, let an external site figure out which internal hosts exist. Root cause and fix.">
 <meta name="color-scheme" content="dark">
-<meta name="theme-color" content="#0A1013">
+<meta name="theme-color" content="#050506">
 
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../styles.css">
 </head>
 <body>
+<div id="progress" aria-hidden="true"></div>
 
 <header class="topbar">
   <div class="wrap topbar-inner">
     <a class="wordmark" href="../index.html">gp_sec</a>
-    <nav aria-label="Sections">
-      <a href="../index.html#findings">Findings</a>
+    <nav class="nav" aria-label="Sections">
+      <a href="../notes.html">Notes</a>
+      <a href="../findings.html">Findings</a>
       <a href="../index.html#contact">Contact</a>
     </nav>
   </div>
@@ -31,9 +32,9 @@
 
 <main class="article">
   <div class="wrap article-inner">
-    <a class="back" href="../index.html#findings">Back to findings</a>
+    <a class="back" href="../findings.html">Back to all findings</a>
 
-    <p class="dateline">February 2024 · web</p>
+    <p class="dateline">21 February 2024 · web</p>
     <h1>Chaining CSRF and an XS-Leak to map an internal network</h1>
 
     <p>
@@ -175,15 +176,18 @@ probe("10.0.0.32");       // fast  -> exists</pre>
       leakable. Reading the response is only one way to learn its secret.
     </p>
 
-    <p><a class="back" href="../index.html#findings">Back to findings</a></p>
+    <p><a class="back" href="../findings.html">Back to all findings</a></p>
   </div>
 </main>
 
 <footer>
   <div class="wrap foot-inner">
     <span class="quote">&ldquo;Find the bug. Understand why it works. Make sure it doesn&rsquo;t come back.&rdquo;</span>
-    <span>2026</span>
+    <span id="clock">Chennai<span class="sep">·</span><span id="time">--:--:--</span></span>
   </div>
 </footer>
+<script>
+(function(){var t=document.getElementById('time');function tick(){t.textContent=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date())+' IST';}tick();setInterval(tick,1000);})();
+</script>
 </body>
 </html>

@@ -6,24 +6,25 @@
 <title>The browser's security model in plain words: SOP, CORS, SameSite, and the cookie flags · gp_sec</title>
 <meta name="description" content="SOP, CORS, SameSite, Secure and HttpOnly explained simply, the way I finally understood them, with how I test each in a browser.">
 <meta name="color-scheme" content="dark">
-<meta name="theme-color" content="#0A1013">
+<meta name="theme-color" content="#050506">
 
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../styles.css">
 </head>
 <body>
+<div id="progress" aria-hidden="true"></div>
 
 <header class="topbar">
   <div class="wrap topbar-inner">
     <a class="wordmark" href="../index.html">gp_sec</a>
-    <nav aria-label="Sections">
-      <a href="../index.html#writing">Writing</a>
+    <nav class="nav" aria-label="Sections">
+      <a href="../notes.html">Notes</a>
+      <a href="../findings.html">Findings</a>
       <a href="../index.html#contact">Contact</a>
     </nav>
   </div>
@@ -31,9 +32,9 @@
 
 <main class="article">
   <div class="wrap article-inner">
-    <a class="back" href="../index.html#writing">Back to writing</a>
+    <a class="back" href="../notes.html">Back to all notes</a>
 
-    <p class="dateline">October 2023 · web</p>
+    <p class="dateline">24 October 2023 · web</p>
     <h1>The browser's security model in plain words</h1>
 
     <p>
@@ -252,15 +253,18 @@ Response:  Access-Control-Allow-Origin: https://evil.com
       the page can load. Six answers, and now they don't blur together.
     </p>
 
-    <p><a class="back" href="../index.html#writing">Back to writing</a></p>
+    <p><a class="back" href="../notes.html">Back to all notes</a></p>
   </div>
 </main>
 
 <footer>
   <div class="wrap foot-inner">
     <span class="quote">&ldquo;Find the bug. Understand why it works. Make sure it doesn&rsquo;t come back.&rdquo;</span>
-    <span>2026</span>
+    <span id="clock">Chennai<span class="sep">·</span><span id="time">--:--:--</span></span>
   </div>
 </footer>
+<script>
+(function(){var t=document.getElementById('time');function tick(){t.textContent=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date())+' IST';}tick();setInterval(tick,1000);})();
+</script>
 </body>
 </html>
