@@ -64,8 +64,16 @@ body > * { position: relative; z-index: 1; }
 
 a { color: var(--text); text-decoration-color: var(--line); text-underline-offset: 3px; }
 a:hover { color: var(--accent); text-decoration-color: var(--accent-mid); }
-a.link-accent { color: var(--accent); text-decoration: none; }
-a.link-accent:hover { color: var(--text); text-decoration: none; }
+a.link-accent {
+  color: var(--accent);
+  text-decoration: none;
+  display: inline-block;
+  transition: color .2s ease, transform .2s ease;
+}
+a.link-accent:hover {
+  color: var(--text);
+  transform: translateX(3px);
+}
 
 :focus-visible {
   outline: 2px solid var(--accent);
@@ -317,8 +325,13 @@ a.link-accent:hover { color: var(--text); text-decoration: none; }
   color: var(--text-dim);
 }
 .pubs li:first-child { border-top: none; }
-.pubs a { color: var(--accent); text-decoration: none; }
-.pubs a:hover { color: var(--text); }
+.pubs a {
+  color: var(--accent);
+  text-decoration: none;
+  display: inline-block;
+  transition: color .2s ease, transform .2s ease;
+}
+.pubs a:hover { color: var(--text); transform: translateX(3px); }
 
 /* horizontal journey */
 .journey {
@@ -396,8 +409,13 @@ a.link-accent:hover { color: var(--text); text-decoration: none; }
 .links { list-style: none; margin: 1.3rem 0 0; padding: 0; }
 .links li { padding: .55rem 0; border-bottom: 1px solid var(--line-soft); }
 .links li:first-child { border-top: 1px solid var(--line-soft); }
-.links a { text-decoration: none; color: var(--text-mid); }
-.links a:hover { color: var(--accent); }
+.links a {
+  text-decoration: none;
+  color: var(--accent);
+  display: inline-block;
+  transition: color .2s ease, transform .2s ease;
+}
+.links a:hover { color: var(--text); transform: translateX(3px); }
 .links a::after { content: " ↗"; font-size: .8em; color: var(--text-dim); }
 .links a[href^="mailto"]::after { content: ""; }
 
