@@ -64,8 +64,8 @@ body > * { position: relative; z-index: 1; }
 
 a { color: var(--text); text-decoration-color: var(--line); text-underline-offset: 3px; }
 a:hover { color: var(--accent); text-decoration-color: var(--accent-mid); }
-a.link-accent { color: var(--accent); text-decoration-color: var(--accent-mid); }
-a.link-accent:hover { color: var(--text); text-decoration-color: var(--text-dim); }
+a.link-accent { color: var(--accent); text-decoration: none; }
+a.link-accent:hover { color: var(--text); text-decoration: underline; text-decoration-color: var(--text-dim); }
 
 :focus-visible {
   outline: 2px solid var(--accent);
@@ -316,7 +316,7 @@ a.link-accent:hover { color: var(--text); text-decoration-color: var(--text-dim)
   font-size: .95rem;
   color: var(--text-dim);
 }
-.pubs li:first-child { border-top: 1px solid var(--line-soft); }
+.pubs li:first-child { border-top: none; }
 .pubs a { color: var(--accent); text-decoration: none; }
 .pubs a:hover { color: var(--text); }
 
