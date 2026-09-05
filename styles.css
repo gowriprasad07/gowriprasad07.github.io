@@ -28,6 +28,7 @@ a{color:inherit;text-decoration:none}
 ::selection{background:var(--teal-dim);color:var(--text)}
 :focus-visible{outline:2px solid var(--teal);outline-offset:3px;border-radius:2px}
 .grad{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+#progress{position:fixed;top:0;left:0;height:2px;width:0%;background:var(--grad);z-index:20;transition:width .08s linear}
 .skip{position:absolute;left:-9999px}
 .skip:focus{left:1rem;top:1rem;z-index:30;background:var(--teal);color:#04120e;padding:.5rem .85rem;font-weight:600}
 
@@ -46,6 +47,7 @@ a{color:inherit;text-decoration:none}
 .hero{padding:clamp(3.4rem,7vw,6rem) 0 clamp(3rem,6vw,5rem);border-bottom:1px solid var(--line-soft)}
 .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(2rem,5vw,3.5rem);align-items:center}
 .hero h1{font-family:var(--serif);font-weight:700;font-size:clamp(2.5rem,6.2vw,4.4rem);line-height:1.0;letter-spacing:-.025em;margin:0 0 1.3rem;color:#F6F7F9}
+.hero .hi{font-family:var(--mono);font-size:.92rem;color:var(--teal);margin:0 0 1.4rem;letter-spacing:.01em}
 .hero .lede{font-size:1.08rem;color:var(--text-mid);max-width:42ch;margin:0 0 2rem}
 .hero-actions{display:flex;gap:.75rem;flex-wrap:wrap}
 .btn{font-weight:600;font-size:.95rem;padding:.72rem 1.35rem;border-radius:9px;transition:all .2s ease;border:1px solid transparent}

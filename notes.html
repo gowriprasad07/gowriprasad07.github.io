@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+<div id="progress" aria-hidden="true"></div>
 <header class="topbar">
   <div class="wrap topbar-inner">
     <a class="wordmark" href="/">gp_sec</a>
@@ -22,7 +23,6 @@
       <a href="notes.html">Notes</a>
       <a href="findings.html">Findings</a>
       <a href="index.html#contact">Contact</a>
-      <a class="btn-pill" href="resume.pdf">Resume</a>
     </nav>
   </div>
 </header>
@@ -81,5 +81,13 @@
     <span>gp_sec</span>
   </div>
 </footer>
+<script>
+(function(){
+  if(window.matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+  var bar=document.getElementById('progress'),raf=null;
+  function onScroll(){if(raf)return;raf=requestAnimationFrame(function(){var h=document.documentElement,max=h.scrollHeight-h.clientHeight;bar.style.width=(max>0?(h.scrollTop/max)*100:0)+'%';raf=null;});}
+  window.addEventListener('scroll',onScroll,{passive:true});onScroll();
+})();
+</script>
 </body>
 </html>

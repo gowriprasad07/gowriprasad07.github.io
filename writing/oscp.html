@@ -6,24 +6,25 @@
 <title>What OSCP really taught me, and what I wasted time on · gp_sec</title>
 <meta name="description" content="My OSCP journey, failed at 50 and passed at 90. The prep that actually worked, the time I wasted, and the tips I'd give someone starting out.">
 <meta name="color-scheme" content="dark">
-<meta name="theme-color" content="#0A1013">
+<meta name="theme-color" content="#050506">
 
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../styles.css">
 </head>
 <body>
+<div id="progress" aria-hidden="true"></div>
 
 <header class="topbar">
   <div class="wrap topbar-inner">
     <a class="wordmark" href="../index.html">gp_sec</a>
-    <nav aria-label="Sections">
-      <a href="../index.html#writing">Writing</a>
+    <nav class="nav" aria-label="Sections">
+      <a href="../notes.html">Notes</a>
+      <a href="../findings.html">Findings</a>
       <a href="../index.html#contact">Contact</a>
     </nav>
   </div>
@@ -235,5 +236,13 @@
     <span>2026</span>
   </div>
 </footer>
+<script>
+(function(){
+  if(window.matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+  var bar=document.getElementById('progress'),raf=null;
+  function onScroll(){if(raf)return;raf=requestAnimationFrame(function(){var h=document.documentElement,max=h.scrollHeight-h.clientHeight;bar.style.width=(max>0?(h.scrollTop/max)*100:0)+'%';raf=null;});}
+  window.addEventListener('scroll',onScroll,{passive:true});onScroll();
+})();
+</script>
 </body>
 </html>
