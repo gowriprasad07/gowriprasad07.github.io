@@ -1,61 +1,52 @@
-# gp_sec — personal site
+# gp_sec
 
-Static site. Hand-written HTML and CSS, one small script, no build step,
-no dependencies. Hosted on GitHub Pages.
+My personal site. Notes on security, writeups of bugs I've found, and a bit about me.
 
-## Files
+Live at [gowriprasad07.github.io](https://gowriprasad07.github.io).
+
+## What it is
+
+A plain static site. Hand-written HTML and CSS, one small script for the clock and the scroll bar, no framework and no build step. It's hosted on GitHub Pages, so pushing to `main` puts it live.
+
+## How it's laid out
 
 ```
-index.html                 the whole main page
-styles.css                 all styling, every page
-favicon-16.png             tab icon
-favicon-32.png             tab icon
-apple-touch-icon.png       home-screen icon
-og-image.png               link-preview image (use the gp_sec logo here)
-resume.pdf                 add this yourself
-.nojekyll                  serve files as-is, no Jekyll
-writing/
-  ssti-explained.html      example post — copy this to make new ones
-  origins-and-credentials.html
+index.html          the home page
+notes.html          all notes
+findings.html       all findings
+styles.css          styling for every page
+tree.png            the tree in the stats section
+thumbs/             small icons used on the cards
+writing/            every note and finding, one file each
 ```
 
-## Adding a post
+The two kinds of writing:
 
-1. Copy an existing file in `writing/` to `writing/your-slug.html`
-2. Change the `<title>`, `<h1>`, dateline and body
-3. In `index.html`, copy the commented `<li>` block in the `.posts` list,
-   uncomment it, and point it at the new file. Newest at the top.
+- **Notes** are things I had to sit with before they made sense, written down so I don't forget.
+- **Findings** are bugs I've found, explained simply. I keep the cause and the fix and leave out anything internal.
 
-Post tags: keep the vocabulary small — `web`, `infra`, `notes`, `tooling`.
+## Adding a new post
 
-## Local preview
+1. Copy an existing file in `writing/` and rename it.
+2. Change the title, date, tag and body.
+3. Add a card for it on `index.html` and on `notes.html` or `findings.html`.
+
+Tags are kept short: `web`, `infra`, `auth`, `xss`, `sqli`, `notes`, `career`.
+
+## Running it locally
 
 ```bash
 python3 -m http.server 8000
 ```
 
-Open `http://localhost:8000`. Use this rather than opening the file
-directly, so relative paths behave as they will in production.
+Then open `http://localhost:8000`. Use a local server rather than opening the file directly, so the links behave the same as they do live.
 
 ## Deploying
 
 ```bash
 git add .
-git commit -m "message"
+git commit -m "your message"
 git push
 ```
 
-Live within about a minute. Favicons cache hard — hard-reload with
-Cmd+Shift+R if the tab icon looks stale.
-
-## Notes on the design
-
-- Dark only. Depth comes from layered surfaces (`--bg`, `--surface`,
-  `--surface-2`) and low-contrast rules, not from glow.
-- Teal accent appears in a handful of places on purpose. Adding more
-  will make it look like every other security site.
-- Motion: one staggered reveal of the hero panel on load, a slow pulse on
-  the live dot, scroll progress bar, scrollspy nav, live Chennai clock.
-  All of it disabled under `prefers-reduced-motion` except the clock.
-- Careful with CSS `padding` shorthand on `.wrap` children — a shorthand
-  will wipe the horizontal gutter. Use `padding-top` / `padding-bottom`.
+That's it. GitHub Pages rebuilds on push.
