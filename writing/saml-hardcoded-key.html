@@ -25,6 +25,7 @@
     <nav class="nav" aria-label="Sections">
       <a href="../notes.html">Notes</a>
       <a href="../findings.html">Findings</a>
+      <a href="../ctf.html">CTF</a>
       <a href="../index.html#contact">Contact</a>
     </nav>
   </div>
@@ -34,7 +35,7 @@
   <div class="wrap article-inner">
     <a class="back" href="../findings.html">Back to all findings</a>
 
-    <p class="dateline">9 February 2025 · auth</p>
+    <p class="dateline">9 February 2025 · auth · <span class="views" data-views-here>–</span> views</p>
     <h1>A hardcoded SAML signing key, and logging in as anyone</h1>
 
     <p>
@@ -132,6 +133,14 @@
       usually where these fall down.
     </p>
 
+    
+    <div class="like-row">
+      <button class="like-btn" data-like aria-label="Like this post">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 21s-8.5-5.5-8.5-11A4.5 4.5 0 0 1 12 7a4.5 4.5 0 0 1 8.5 3c0 5.5-8.5 11-8.5 11z"/></svg>
+        <span class="like-count">–</span>
+      </button>
+    </div>
+
     <p><a class="back" href="../findings.html">Back to all findings</a></p>
   </div>
 </main>
@@ -153,5 +162,7 @@
   window.addEventListener('scroll',onScroll,{passive:true});onScroll();
 })();
 </script>
+<script data-goatcounter="https://gpsec.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+<script src="../views.js" defer></script>
 </body>
 </html>
