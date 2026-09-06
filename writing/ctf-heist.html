@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Heist: gMSA read to pass-the-hash to SYSTEM · gp_sec</title>
+<meta name="description" content="An OSCP-style Windows box. Poison a name lookup for a hash, read a gMSA password, pass the hash, then abuse SeRestore to become SYSTEM.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#050506">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+<div id="progress" aria-hidden="true"></div>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="wordmark" href="../index.html">gp_sec</a>
+    <nav class="nav" aria-label="Sections">
+      <a href="../notes.html">Notes</a>
+      <a href="../findings.html">Findings</a>
+      <a href="../ctf.html">CTF</a>
+      <a href="../index.html#contact">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main class="article">
+  <div class="wrap article-inner">
+    <a class="back" href="../ctf.html">Back to all CTFs</a>
+
+    <p class="dateline">Heist · windows · ad</p>
+    <h1>Heist: a gMSA read all the way to SYSTEM</h1>
+
+    <p>
+      This was one of my favourite Windows boxes from my prep. Nothing here is a
+      crazy exploit, it's a chain of small, normal-looking Active Directory
+      settings that add up to full control. Get a hash off the wire, crack it,
+      read a service account's password because I'm allowed to, then abuse one
+      privilege to become SYSTEM. Each step is boring on its own. Together they
+      own the domain controller.
+    </p>
+
+    <h2>Getting a foothold</h2>
+    <p>
+      I started with a listener on the network using Responder. When a Windows
+      machine tries to resolve a name it can't find, it falls back to broadcast
+      protocols, and anything listening can answer. Responder answers, the machine
+      tries to authenticate to me, and I catch its NetNTLM hash. That's not the
+      password, it's the challenge-response, so I ran it through hashcat with
+      rockyou and it cracked.
+    </p>
+    <p>
+      With a username and password in hand, I logged in over WinRM. That gave me a
+      normal user shell on the box. Foothold done.
+    </p>
+
+    <h2>Finding the way up</h2>
+    <p>
+      Next question on any Windows box: what can this user actually do? I ran
+      BloodHound to map the domain, and it drew the answer for me. My user was a
+      member of a group, and that group had a <code>ReadGMSAPassword</code> edge
+      pointing at a service account.
+    </p>
+
+    <figure class="diagram" style="text-align:center">
+      <pre style="text-align:left;display:inline-block">enox  ──MemberOf──▶  WEB ADMINS  ──ReadGMSAPassword──▶  svc_apache$</pre>
+    </figure>
+
+    <p>
+      A gMSA (group managed service account) is one where Windows manages the
+      password for you and rotates it automatically. The catch is that any account
+      allowed to read it can pull the current password out of the directory. My
+      group was on that allowed list. So I read the service account's hash
+      straight out of AD, no cracking needed.
+    </p>
+
+    <h2>Pass the hash</h2>
+    <p>
+      I didn't have the service account's plaintext password, just its NT hash.
+      That's fine. NTLM lets you authenticate with the hash directly, so I passed
+      it and logged in as the service account. Now I was <code>svc_apache$</code>,
+      a more privileged account than the one I started with.
+    </p>
+
+    <h2>SeRestore to SYSTEM</h2>
+    <p>
+      Checking the service account's privileges, it held <code>SeRestore</code>.
+      That privilege lets you write files anywhere on the system, including places
+      a normal user can't touch. There's a well-known trick with it: the
+      accessibility button on the Windows login screen runs
+      <code>utilman.exe</code> as SYSTEM. If you can overwrite <code>utilman.exe</code>
+      with <code>cmd.exe</code>, then clicking that button at the login screen gives
+      you a SYSTEM shell.
+    </p>
+    <p>
+      SeRestore gave me exactly the write access to do that. I swapped
+      <code>utilman.exe</code> for a command prompt, triggered it from the lock
+      screen, and got a shell running as <code>nt authority\system</code>. Full
+      control of the domain controller.
+    </p>
+
+    <h2>The chain, in one line</h2>
+    <blockquote>
+      Responder catches a hash, hashcat cracks it, WinRM gets a shell,
+      ReadGMSAPassword hands over the service account, pass-the-hash logs in as it,
+      and SeRestore turns a file write into SYSTEM.
+    </blockquote>
+
+    <h2>What I took from it</h2>
+    <p>
+      This box is a good reminder that Windows privilege escalation is usually not
+      about finding a memory bug. It's about noticing what an account is quietly
+      allowed to do. A group membership, a "read this password" permission, one
+      dangerous privilege. Each is a setting someone chose on purpose. My job was
+      just to line them up. When I test AD now, the first thing I do is exactly
+      this: map who can do what, and look for the short path from where I am to
+      where I want to be.
+    </p>
+
+    <p><a class="back" href="../ctf.html">Back to all CTFs</a></p>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot-inner">
+    <span class="quote">&ldquo;Find the bug. Understand why it works. Make sure it doesn&rsquo;t come back.&rdquo;</span>
+    <span id="clock">Chennai<span class="sep">·</span><span id="time">--:--:--</span></span>
+  </div>
+</footer>
+<script>
+(function(){
+  var t=document.getElementById('time');
+  if(t){function tick(){t.textContent=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date())+' IST';}tick();setInterval(tick,1000);}
+  if(window.matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+  var bar=document.getElementById('progress'),raf=null;
+  if(!bar)return;
+  function onScroll(){if(raf)return;raf=requestAnimationFrame(function(){var h=document.documentElement,max=h.scrollHeight-h.clientHeight;bar.style.width=(max>0?(h.scrollTop/max)*100:0)+'%';raf=null;});}
+  window.addEventListener('scroll',onScroll,{passive:true});onScroll();
+})();
+</script>
+</body>
+</html>
