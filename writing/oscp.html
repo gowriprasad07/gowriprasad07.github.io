@@ -35,7 +35,7 @@
   <div class="wrap article-inner">
     <a class="back" href="../notes.html">Back to all notes</a>
 
-    <p class="dateline">27 July 2026 · notes · <span class="views" data-views-here>–</span> views</p>
+    <p class="dateline">27 July 2026 · notes · <span id="views-here" class="views"></span></p>
     <h1>What OSCP really taught me, and what I wasted time on</h1>
 
     <p>
@@ -249,6 +249,8 @@
 })();
 </script>
 <script data-goatcounter="https://gpsec.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
-<script src="../views.js" defer></script>
+<script>
+(function(){var t=setInterval(function(){if(window.goatcounter&&window.goatcounter.visit_count){clearInterval(t);window.goatcounter.visit_count({append:'#views-here',type:'html',no_branding:true})}},100)})();
+</script>
 </body>
 </html>

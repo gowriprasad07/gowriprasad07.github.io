@@ -224,7 +224,8 @@ footer{padding:2.25rem 0 3.25rem;border-top:1px solid var(--line-soft)}
 @media(max-width:60rem){.card-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:40rem){.card-grid{grid-template-columns:1fr}}
 
-/* ===== view counter ===== */
-.dateline .views{color:var(--teal-mid);font-variant-numeric:tabular-nums}
-.pcard-views{display:block;font-family:var(--mono);font-size:.66rem;color:var(--text-dim);margin-top:.35rem;letter-spacing:.04em}
-.pcard-views span{color:var(--teal-mid)}
+
+/* ===== view counter (GoatCounter visit_count widget) ===== */
+#views-here{display:inline}
+#views-here .gcvc,#views-here span,#views-here div{color:var(--teal-mid)!important;font-family:var(--mono)!important;font-size:.78rem!important;background:none!important;border:none!important;padding:0!important;margin:0!important}
+#views-here svg{display:none}
