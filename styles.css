@@ -230,3 +230,14 @@ footer{padding:2.25rem 0 3.25rem;border-top:1px solid var(--line-soft)}
 .pcard-views{display:block;font-family:var(--mono);font-size:.66rem;color:var(--text-dim);margin-top:.35rem;letter-spacing:.04em}
 .pcard-views span{color:var(--teal-mid)}
 .dateline .views{display:inline}
+
+/* ===== like button ===== */
+.like-row{margin:2.5rem 0 1rem;display:flex;justify-content:flex-start}
+.like-btn{display:inline-flex;align-items:center;gap:.5rem;background:var(--surface);border:1px solid var(--line);color:var(--text-mid);font-family:var(--mono);font-size:.85rem;padding:.55rem 1rem;border-radius:999px;cursor:pointer;transition:all .2s ease}
+.like-btn:hover{border-color:var(--teal-mid);color:var(--teal)}
+.like-btn svg{fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round;transition:transform .2s ease}
+.like-btn:hover svg{transform:scale(1.1)}
+.like-btn.liked{border-color:var(--teal-mid);color:var(--teal)}
+.like-btn.liked svg{fill:var(--teal);stroke:var(--teal);animation:like-pop .3s ease}
+@keyframes like-pop{0%{transform:scale(1)}50%{transform:scale(1.35)}100%{transform:scale(1)}}
+.like-count{font-variant-numeric:tabular-nums}
