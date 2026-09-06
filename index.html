@@ -106,13 +106,11 @@
   </section>
 
   <!-- NOTES -->
+
   <section class="section alt" id="writeups">
     <div class="wrap">
       <div class="section-head">
-        <div>
-          <p class="eyebrow">Learn</p>
-          <h2>Notes</h2>
-        </div>
+        <div><p class="eyebrow">Learn</p><h2>Notes</h2></div>
         <a class="view-all" href="notes.html">View all notes</a>
       </div>
       <p class="section-blurb">Things I had to sit with for a while before they made sense. I write them down so I don't forget how they work.</p>
@@ -122,7 +120,161 @@
             <div class="pcard-body">
               <span class="pcard-tag">career</span>
               <h3 class="pcard-title">What OSCP really taught me, and what I wasted time on</h3>
-              <span class="pcard-date">Jul 2026</span></span>
+              <span class="pcard-date">Jul 2026</span>
+            </div>
+          </a>
+          <a class="pcard" href="writing/oauth.html">
+            <div class="pcard-thumb"><img src="thumbs/web.svg" alt=""></div>
+            <div class="pcard-body">
+              <span class="pcard-tag">web</span>
+              <h3 class="pcard-title">OAuth 2.0 for testers: the flow, and the three things I check</h3>
+              <span class="pcard-date">Jan 2026</span>
+            </div>
+          </a>
+          <a class="pcard" href="writing/ntlm.html">
+            <div class="pcard-thumb"><img src="thumbs/infra.svg" alt=""></div>
+            <div class="pcard-body">
+              <span class="pcard-tag">infra</span>
+              <h3 class="pcard-title">NTLM authentication, and why it keeps coming back to bite you</h3>
+              <span class="pcard-date">Nov 2024</span>
+            </div>
+          </a>
+          <a class="pcard" href="writing/agent-security.html">
+            <div class="pcard-thumb"><img src="thumbs/infra.svg" alt=""></div>
+            <div class="pcard-body">
+              <span class="pcard-tag">infra</span>
+              <h3 class="pcard-title">Checking the security posture of an endpoint agent</h3>
+              <span class="pcard-date">Sep 2024</span>
+            </div>
+          </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="findings">
+    <div class="wrap">
+      <div class="section-head">
+        <div><p class="eyebrow">Break</p><h2>Findings</h2></div>
+        <a class="view-all" href="findings.html">View all findings</a>
+      </div>
+      <p class="section-blurb">Bugs I found, explained simply. I keep the cause and the fix, and leave out anything related to internal or company data.</p>
+      <div class="card-grid">
+          <a class="pcard" href="writing/sqli-to-rce.html">
+            <div class="pcard-thumb"><img src="thumbs/sqli.svg" alt=""></div>
+            <div class="pcard-body">
+              <span class="pcard-tag">sqli</span>
+              <h3 class="pcard-title">SQL injection that writes its way to code execution</h3>
+              <span class="pcard-date">Jan 2026</span>
+            </div>
+          </a>
+          <a class="pcard" href="writing/xss-postmessage.html">
+            <div class="pcard-thumb"><img src="thumbs/xss.svg" alt=""></div>
+            <div class="pcard-body">
+              <span class="pcard-tag">xss</span>
+              <h3 class="pcard-title">DOM XSS through postMessage</h3>
+              <span class="pcard-date">Dec 2025</span>
+            </div>
+          </a>
+          <a class="pcard" href="writing/authbypass-sqli.html">
+            <div class="pcard-thumb"><img src="thumbs/web.svg" alt=""></div>
+            <div class="pcard-body">
+              <span class="pcard-tag">web</span>
+              <h3 class="pcard-title">A loose regex to auth bypass, then SQL injection to admin</h3>
+              <span class="pcard-date">Jul 2025</span>
+            </div>
+          </a>
+          <a class="pcard" href="writing/saml-hardcoded-key.html">
+            <div class="pcard-thumb"><img src="thumbs/auth.svg" alt=""></div>
+            <div class="pcard-body">
+              <span class="pcard-tag">auth</span>
+              <h3 class="pcard-title">A hardcoded SAML signing key, and logging in as anyone</h3>
+              <span class="pcard-date">Feb 2025</span>
+            </div>
+          </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section alt" id="ctf">
+    <div class="wrap">
+      <div class="section-head">
+        <div><p class="eyebrow">Attack</p><h2>CTF</h2></div>
+        <a class="view-all" href="ctf.html">View all CTFs</a>
+      </div>
+      <p class="section-blurb">Boxes I found interesting. Written up as the path from foothold to full control, the way I'd explain it to someone stuck on the same machine.</p>
+      <div class="card-grid">
+          <a class="pcard" href="writing/ctf-heist.html">
+            <div class="pcard-thumb"><img src="thumbs/windows.svg" alt=""></div>
+            <div class="pcard-body">
+              <span class="pcard-tag">windows · ad</span>
+              <h3 class="pcard-title">Heist: a gMSA read all the way to SYSTEM</h3>
+              <span class="pcard-date">Heist</span>
+            </div>
+          </a>
+          <a class="pcard" href="writing/ctf-fish.html">
+            <div class="pcard-thumb"><img src="thumbs/windows.svg" alt=""></div>
+            <div class="pcard-body">
+              <span class="pcard-tag">windows</span>
+              <h3 class="pcard-title">Fish: a GlassFish traversal that reads its way in, then a WAR to SYSTEM</h3>
+              <span class="pcard-date">Fish</span>
+            </div>
+          </a>
+          <a class="pcard" href="writing/ctf-nibbles.html">
+            <div class="pcard-thumb"><img src="thumbs/linux.svg" alt=""></div>
+            <div class="pcard-body">
+              <span class="pcard-tag">linux</span>
+              <h3 class="pcard-title">Nibbles: PostgreSQL default creds, then a SUID find to root</h3>
+              <span class="pcard-date">Nibbles</span>
+            </div>
+          </a>
+          <a class="pcard" href="writing/ctf-snookums.html">
+            <div class="pcard-thumb"><img src="thumbs/linux.svg" alt=""></div>
+            <div class="pcard-body">
+              <span class="pcard-tag">linux</span>
+              <h3 class="pcard-title">Snookums: a photo gallery LFI that became a shell, then PwnKit to root</h3>
+              <span class="pcard-date">Snookums</span>
+            </div>
+          </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section tree-band">
+    <img class="tree-bg" src="tree.png" alt="" aria-hidden="true">
+    <div class="wrap">
+      <p class="eyebrow">The work, in numbers</p>
+      <h2 class="display" style="margin-bottom:0">What the years add up to.</h2>
+      <div class="stat-row">
+        <div class="stat-big"><b>560+</b><span>reports triaged</span></div>
+        <div class="stat-big"><b>280+</b><span>bugs reported</span></div>
+        <div class="stat-big"><b>35+</b><span>critical findings</span></div>
+        <div class="stat-big"><b>30+</b><span>security assessments</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section alt" id="contact">
+    <div class="wrap doc">
+      <div class="margin-note">contact</div>
+      <div class="doc-body">
+        <h2>Get in touch</h2>
+        <p>If you've read something here and want to argue with it, or you're working on something interesting, I'd like to hear from you.</p>
+        <ul class="links">
+          <li><a href="mailto:gps3curity@gmail.com">gps3curity@gmail.com</a></li>
+          <li><a href="https://www.linkedin.com/in/gowriprasad-kb-930890157/">LinkedIn</a></li>
+          <li><a href="https://x.com/gp_sec">Twitter / X</a></li>
+          <li><a href="https://www.youtube.com/@gp_sec/videos">YouTube</a></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap foot-inner">
+    <span class="quote">&ldquo;Find the bug. Understand why it works. Make sure it doesn&rsquo;t come back.&rdquo;</span>
+    <span id="clock">Chennai<span class="sep">·</span><span id="time">--:--:--</span></span>
   </div>
 </footer>
 
@@ -134,10 +286,10 @@
   if(window.matchMedia('(prefers-reduced-motion:reduce)').matches)return;
   var bar=document.getElementById('progress'),raf=null;
   function onScroll(){if(raf)return;raf=requestAnimationFrame(function(){var h=document.documentElement,max=h.scrollHeight-h.clientHeight;bar.style.width=(max>0?(h.scrollTop/max)*100:0)+'%';raf=null;});}
-  window.addEventListener('scroll',onScroll,{passive:true});onScroll();
+  if(bar){window.addEventListener('scroll',onScroll,{passive:true});onScroll();}
   var links=[].slice.call(document.querySelectorAll('#nav a[href^="#"]')),byId={},targets=[];
   links.forEach(function(a){var el=document.getElementById(a.getAttribute('href').slice(1));if(el){byId[el.id]=a;targets.push(el);}});
-  var obs=new IntersectionObserver(function(es){es.forEach(function(e){if(!e.isIntersecting)return;links.forEach(function(a){a.classList.remove('active')});var a=byId[e.target.id];if(a)a.classList.add('active');})},{rootMargin:'-45% 0px -50% 0px'});
+  var obs=new IntersectionObserver(function(es){es.forEach(function(e){if(!e.isIntersecting)return;links.forEach(function(a){a.classList.remove('active')});var a=byId[e.target.id];if(a)a.classList.add('active');});},{rootMargin:'-45% 0px -50% 0px'});
   targets.forEach(function(x){obs.observe(x)});
 })();
 </script>
