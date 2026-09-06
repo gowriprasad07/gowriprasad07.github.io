@@ -1,34 +1,39 @@
 /* gp_sec view counter — GoatCounter JSON endpoint
-   Requires "Allow adding visitor counts on your website" enabled in GoatCounter settings. */
+   Uses GoatCounter's documented counter API. Requires
+   "Allow adding visitor counts on your website" enabled in settings. */
 (function () {
-  var GC_CODE = "gpsec";
-  var base = "https://" + GC_CODE + ".goatcounter.com/counter";
-
-  // GoatCounter expects the path with its leading slash intact, e.g.
-  //   /counter//writing/oscp.html.json
-  // so we must NOT encode the slashes. Encode only spaces / odd chars per segment.
-  function endpoint(path) {
-    if (path.charAt(0) !== "/") path = "/" + path;
-    var enc = path.split("/").map(encodeURIComponent).join("/");
-    return base + enc + ".json";
-  }
+  var GC = "https://gpsec.goatcounter.com/counter/";
 
   function fill(el, path) {
-    fetch(endpoint(path))
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (d) {
-        if (d && d.count != null) {
-          el.textContent = d.count;
+    // GoatCounter's documented format: /counter/ + encodeURIComponent(path) + .json
+    var url = GC + encodeURIComponent(path) + ".json";
+    var r = new XMLHttpRequest();
+    r.open("GET", url, true);
+    r.addEventListener("load", function () {
+      if (r.status < 200 || r.status >= 300) return;
+      try {
+        var count = JSON.parse(r.responseText).count;
+        if (count != null) {
+          el.textContent = count;
           if (el.parentElement) el.parentElement.classList.add("has-views");
         }
-      })
-      .catch(function () {});
+      } catch (e) {}
+    });
+    r.send();
   }
 
-  document.querySelectorAll("[data-views-path]").forEach(function (el) {
-    fill(el, el.getAttribute("data-views-path"));
-  });
-  document.querySelectorAll("[data-views-here]").forEach(function (el) {
-    fill(el, location.pathname);
-  });
+  function run() {
+    document.querySelectorAll("[data-views-path]").forEach(function (el) {
+      fill(el, el.getAttribute("data-views-path"));
+    });
+    document.querySelectorAll("[data-views-here]").forEach(function (el) {
+      fill(el, location.pathname);
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", run);
+  } else {
+    run();
+  }
 })();
