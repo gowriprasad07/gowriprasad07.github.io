@@ -1,32 +1,36 @@
-/* GoatCounter view counts via the counter JSON API.
-   Endpoint: /counter/[PATH].json where [PATH] keeps its leading slash,
-   producing a double slash: /counter//writing/oscp.html.json
-   Counts are unique visitors, cached up to ~4 hours. */
+/* gp_sec view counter — talks to the Cloudflare Worker.
+   After deploying the Worker, set WORKER below to its URL
+   (e.g. https://gpsec-views.YOURNAME.workers.dev). */
 (function () {
-  var BASE = "https://gpsec.goatcounter.com/counter/";  // trailing slash kept
+  var WORKER = "https://gpsec-views.bgowriprasad.workers.dev";   // <-- set after deploy
+  if (WORKER.indexOf("REPLACE") !== -1) return;     // not configured yet: stay silent
 
-  function endpoint(path) {
-    if (path.charAt(0) !== "/") path = "/" + path;       // ensure leading slash
-    return BASE + path + ".json";                         // -> /counter//writing/...
-  }
-
-  function load(el, path) {
+  function api(path, method, cb) {
     var r = new XMLHttpRequest();
-    r.open("GET", endpoint(path), true);
+    r.open(method, WORKER + "?path=" + encodeURIComponent(path), true);
     r.addEventListener("load", function () {
       if (r.status < 200 || r.status >= 300) return;
-      try {
-        var c = JSON.parse(r.responseText).count;
-        if (c != null) el.textContent = c;
-      } catch (e) {}
+      try { var c = JSON.parse(r.responseText).count; if (c != null && cb) cb(c); } catch (e) {}
     });
     r.send();
   }
 
+  // 1) Current page: increment once per browser session, then show the count.
+  var here = document.querySelector("[data-views-here]");
+  if (here) {
+    var p = location.pathname;
+    var seen = false;
+    try { seen = sessionStorage.getItem("v:" + p) === "1"; } catch (e) {}
+    if (seen) {
+      api(p, "GET", function (c) { here.textContent = c; });
+    } else {
+      try { sessionStorage.setItem("v:" + p, "1"); } catch (e) {}
+      api(p, "POST", function (c) { here.textContent = c; });
+    }
+  }
+
+  // 2) Cards: read-only counts for each linked page.
   document.querySelectorAll("[data-views-path]").forEach(function (el) {
-    load(el, el.getAttribute("data-views-path"));
-  });
-  document.querySelectorAll("[data-views-here]").forEach(function (el) {
-    load(el, location.pathname);
+    api(el.getAttribute("data-views-path"), "GET", function (c) { el.textContent = c; });
   });
 })();
