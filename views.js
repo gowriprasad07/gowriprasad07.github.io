@@ -1,13 +1,20 @@
-/* GoatCounter view counts via JSON API (documented pattern).
-   Cards: [data-views-path] = specific page. Article dateline: [data-views-here] = current page.
-   Note: GoatCounter caches counts up to 4 hours and counts unique visitors,
-   so numbers update slowly and your own repeat views won't increment. */
+/* GoatCounter view counts via the counter JSON API.
+   The counter endpoint wants the path with literal slashes (not %2F),
+   so we encode each path segment but keep the "/" separators.
+   Note: counts are unique visitors and cached up to ~4 hours. */
 (function () {
-  var BASE = "https://gpsec.goatcounter.com/counter/";
+  var BASE = "https://gpsec.goatcounter.com/counter";
+
+  function endpoint(path) {
+    if (path.charAt(0) !== "/") path = "/" + path;
+    // encode each segment, keep slashes literal
+    var enc = path.split("/").map(encodeURIComponent).join("/");
+    return BASE + enc + ".json";
+  }
 
   function load(el, path) {
     var r = new XMLHttpRequest();
-    r.open("GET", BASE + encodeURIComponent(path) + ".json", true);
+    r.open("GET", endpoint(path), true);
     r.addEventListener("load", function () {
       if (r.status < 200 || r.status >= 300) return;
       try {
