@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A SYSTEM service that loaded a DLL from a world-writable folder · gp_sec</title>
+<meta name="description" content="A Windows service wrote and loaded a DLL from C:\\Windows\\Temp. Any local user could pre-place their own DLL there and get it loaded as SYSTEM.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#050506">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+<div id="progress" aria-hidden="true"></div>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="wordmark" href="../index.html">gp_sec</a>
+    <nav class="nav" aria-label="Sections">
+      <a href="../notes.html">Notes</a>
+      <a href="../findings.html">Findings</a>
+      <a href="../ctf.html">CTF</a>
+      <a href="../index.html#contact">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main class="article">
+  <div class="wrap article-inner">
+    <a class="back" href="../findings.html">Back to all findings</a>
+
+    <p class="dateline">October 2024 · windows</p>
+    <h1>A SYSTEM service that loaded a DLL from a world-writable folder</h1>
+
+    <p>
+      This one is a classic Windows privilege escalation, and it's a good example
+      because the bug isn't in the code doing anything clever, it's in <em>where</em>
+      the code loads a file from. A security service running as SYSTEM loaded a DLL
+      out of a folder any user can write to. That's all it takes. A normal
+      low-privileged user could drop their own DLL in that folder and have it run
+      as SYSTEM on the next reboot.
+    </p>
+
+    <h2>What the service did</h2>
+    <p>
+      On startup, the service wrote a helper DLL into <code>C:\Windows\Temp</code>
+      and then loaded it into its own process. That process runs as
+      <code>NT AUTHORITY\SYSTEM</code>, the highest privilege on the machine.
+    </p>
+    <p>
+      The problem is the location. <code>C:\Windows\Temp</code> is world-writable,
+      any user on the box can create and modify files there. So the service was
+      loading executable code from a place that an unprivileged attacker fully
+      controls. Loading a DLL means running whatever code is inside it, so if I can
+      choose the DLL, I can run my code inside a SYSTEM process.
+    </p>
+
+    <h2>The detail that made it reliable</h2>
+    <p>
+      There's a wrinkle that makes this cleaner than it first looks. The service
+      writes the DLL itself on startup, so you might think it would just overwrite
+      anything an attacker placed there. Two things defeat that.
+    </p>
+    <p>
+      First, after loading the DLL successfully, the service <em>deletes</em> it
+      from the temp folder. That leaves the path free for any local user to
+      recreate before the next start.
+    </p>
+    <p>
+      Second, and this is the key, if a file is already sitting at that path and
+      it's marked <strong>read-only</strong>, the service's attempt to write its
+      own DLL fails, but it carries on and loads the existing file anyway. So the
+      attack is simply: drop your DLL there, mark it read-only, and wait for the
+      service to start.
+    </p>
+    <pre># as a normal user
+attrib +R evil.dll
+copy evil.dll C:\Windows\Temp\   (preserving the read-only flag)
+# reboot, the service loads evil.dll as SYSTEM</pre>
+
+    <h2>The root cause</h2>
+    <p>
+      The service never checked the DLL it was about to load: not where it came
+      from, not who could write to that folder, not whether the file was signed,
+      not whether its own write even succeeded. It just called the standard load
+      function on a path in a world-writable directory and trusted whatever was
+      there.
+    </p>
+    <blockquote>
+      A SYSTEM process is only as trustworthy as the files it loads. Load one from
+      a folder every user can write to, and you've handed every user SYSTEM.
+    </blockquote>
+    <p>
+      Notably, the codebase already had a safe loader that verified a DLL's
+      signature and path before loading it. This one spot just called the raw
+      load function directly and skipped all of that. A single unchecked load, in a
+      service that otherwise did it properly.
+    </p>
+
+    <h2>The fix</h2>
+    <p>
+      Never load executable code from <code>%windir%\Temp</code> or any
+      user-writable path. Keep the DLL in a protected directory (under Program
+      Files or ProgramData) where only SYSTEM and Administrators can write and
+      normal users can only read. If a staging folder is genuinely needed, create a
+      service-owned private one at install time with permissions that deny users
+      write access. And validate before loading, check the signature and the
+      expected path, which is exactly what the codebase's safe loader already did.
+    </p>
+
+    <h2>What to take from it</h2>
+    <p>
+      When I look at a Windows service now, two questions come first: what does it
+      run as, and what does it load, and from where. A high-privilege process that
+      reads a config, a DLL, a script, or an executable out of a location a normal
+      user can write to is a privilege escalation waiting to happen. The
+      permissions on the <em>folder</em> matter as much as the code. This kind of
+      bug is quiet, it doesn't crash anything or look wrong in testing, but it hands
+      a standard user the whole machine.
+    </p>
+
+    <p><a class="back" href="../findings.html">Back to all findings</a></p>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot-inner">
+    <span class="quote">&ldquo;Find the bug. Understand why it works. Make sure it doesn&rsquo;t come back.&rdquo;</span>
+    <span id="clock">Chennai<span class="sep">·</span><span id="time">--:--:--</span></span>
+  </div>
+</footer>
+<script>
+(function(){
+  var t=document.getElementById('time');
+  if(t){function tick(){t.textContent=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date())+' IST';}tick();setInterval(tick,1000);}
+  if(window.matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+  var bar=document.getElementById('progress'),raf=null;
+  if(!bar)return;
+  function onScroll(){if(raf)return;raf=requestAnimationFrame(function(){var h=document.documentElement,max=h.scrollHeight-h.clientHeight;bar.style.width=(max>0?(h.scrollTop/max)*100:0)+'%';raf=null;});}
+  window.addEventListener('scroll',onScroll,{passive:true});onScroll();
+})();
+</script>
+</body>
+</html>
