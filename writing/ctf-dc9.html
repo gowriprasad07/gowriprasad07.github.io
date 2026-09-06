@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DC-9: SQLi, port knocking, and a sudo write to root · gp_sec</title>
+<meta name="description" content="A Linux box. SQL injection to dump creds, LFI to find a hidden knock sequence, port-knock SSH open, then a sudo file-write to add a root user.">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#050506">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+<div id="progress" aria-hidden="true"></div>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="wordmark" href="../index.html">gp_sec</a>
+    <nav class="nav" aria-label="Sections">
+      <a href="../notes.html">Notes</a>
+      <a href="../findings.html">Findings</a>
+      <a href="../ctf.html">CTF</a>
+      <a href="../index.html#contact">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main class="article">
+  <div class="wrap article-inner">
+    <a class="back" href="../ctf.html">Back to all CTFs</a>
+
+    <p class="dateline">DC-9 · linux</p>
+    <h1>DC-9: SQL injection, a hidden knock, and a sudo write to root</h1>
+
+    <p>
+      This Linux box has a bit of everything, and the steps hand off to each other
+      nicely. A SQL injection gives me a pile of credentials, a file read points at
+      a hidden way in, a port knock actually opens that way, and a single sudo rule
+      at the end turns a normal user into root. None of it is hard on its own, but
+      you have to spot each clue and follow it to the next.
+    </p>
+
+    <h2>SQL injection in the search</h2>
+    <p>
+      The site is a staff directory with a search page. The search was injectable,
+      so I used a UNION-based injection to read straight out of the database. It
+      exposed two databases worth of data: a <code>Staff</code> table and a
+      <code>users</code> table.
+    </p>
+    <p>
+      The Staff table had the display records. The users table was the interesting
+      one, it held usernames and password hashes for the actual site accounts. I
+      pulled all of them and cracked what I could. Now I had a set of real
+      credentials.
+    </p>
+
+    <h2>Logging in and finding an LFI</h2>
+    <p>
+      Logging into the site as admin unlocked an "Add Record" and a
+      <code>manage.php</code> page. The manage page took a
+      <code>file</code> parameter, and that's a classic tell. I tried a path
+      traversal and it read local files back to me:
+    </p>
+    <pre>manage.php?file=../../../../../../etc/passwd</pre>
+    <p>
+      So I had local file inclusion. Reading <code>/etc/passwd</code> gave me the
+      list of real users on the box (fredf, janitor, and others), which lines up
+      with names I'd want to try over SSH. But SSH wasn't open. That's where the
+      next clue came in.
+    </p>
+
+    <h2>A hidden port knock</h2>
+    <p>
+      Since I could read arbitrary files, I went looking for config that might
+      explain the closed SSH port. Reading the knock daemon's config was the win:
+    </p>
+    <pre>manage.php?file=../../../../../../etc/knockd.conf</pre>
+    <p>
+      Port knocking is a little trick where a port (here, SSH) stays firewalled off
+      until you connect to a specific sequence of ports in the right order. Hit
+      those ports in sequence and the firewall opens SSH just for you. The config
+      handed me the exact sequence:
+    </p>
+    <pre>openSSH  sequence = 7469, 8475, 9842</pre>
+    <p>
+      I knocked those three ports in order, and SSH opened up. Then I logged in as
+      one of the users whose password I'd cracked earlier (fredf). Foothold on the
+      box.
+    </p>
+
+    <h2>The path to root</h2>
+    <p>
+      First thing on any Linux box: <code>sudo -l</code>. It showed fredf could run
+      one specific binary as root with no password:
+    </p>
+    <pre>User fredf may run the following commands on dc-9:
+    (root) NOPASSWD: /opt/devstuff/dist/test/test</pre>
+    <p>
+      That <code>test</code> program took an input file and an output file and
+      wrote the input's contents into the output, running as root. A root-owned
+      write-anywhere primitive is all you need. The cleanest target is
+      <code>/etc/passwd</code>: add a line for a brand-new user with a known
+      password and a UID of 0, and you've created a second root account.
+    </p>
+    <pre># make a passwd line with a known password and uid 0
+echo 'zombie:$1$...hash...:0:0:root:/root:/bin/bash' > /tmp/zombie
+
+# use the root-owned tool to append it to /etc/passwd
+sudo ./test /tmp/zombie /etc/passwd
+
+# become the new root user
+su zombie</pre>
+    <p>
+      After that, <code>su zombie</code> dropped me into a root shell, and the flag
+      was sitting in <code>/root</code>. The box printed a big "NICE WORK" banner,
+      which is always a nice way to finish.
+    </p>
+
+    <h2>The chain, in one line</h2>
+    <blockquote>
+      SQLi dumps the user hashes, cracking gives real logins, LFI reads the knockd
+      config, knocking opens SSH, and a passwordless sudo write to /etc/passwd
+      creates a second root.
+    </blockquote>
+
+    <h2>What I took from it</h2>
+    <p>
+      Two habits this box reinforced. When you get a file read, don't stop at
+      <code>/etc/passwd</code>, read the service configs too, because that's where
+      the box hides how it's actually wired (the knock sequence would have been
+      impossible to guess). And when you land a shell, <code>sudo -l</code> is
+      always the first thing to run. A single NOPASSWD rule on the wrong binary is
+      one of the most common ways a normal user becomes root, and it's a real-world
+      finding, not just a CTF trick.
+    </p>
+
+    <p><a class="back" href="../ctf.html">Back to all CTFs</a></p>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot-inner">
+    <span class="quote">&ldquo;Find the bug. Understand why it works. Make sure it doesn&rsquo;t come back.&rdquo;</span>
+    <span id="clock">Chennai<span class="sep">·</span><span id="time">--:--:--</span></span>
+  </div>
+</footer>
+<script>
+(function(){
+  var t=document.getElementById('time');
+  if(t){function tick(){t.textContent=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date())+' IST';}tick();setInterval(tick,1000);}
+  if(window.matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+  var bar=document.getElementById('progress'),raf=null;
+  if(!bar)return;
+  function onScroll(){if(raf)return;raf=requestAnimationFrame(function(){var h=document.documentElement,max=h.scrollHeight-h.clientHeight;bar.style.width=(max>0?(h.scrollTop/max)*100:0)+'%';raf=null;});}
+  window.addEventListener('scroll',onScroll,{passive:true});onScroll();
+})();
+</script>
+</body>
+</html>
