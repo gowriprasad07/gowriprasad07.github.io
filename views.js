@@ -1,15 +1,13 @@
 /* GoatCounter view counts via the counter JSON API.
-   The counter endpoint wants the path with literal slashes (not %2F),
-   so we encode each path segment but keep the "/" separators.
-   Note: counts are unique visitors and cached up to ~4 hours. */
+   Endpoint: /counter/[PATH].json where [PATH] keeps its leading slash,
+   producing a double slash: /counter//writing/oscp.html.json
+   Counts are unique visitors, cached up to ~4 hours. */
 (function () {
-  var BASE = "https://gpsec.goatcounter.com/counter";
+  var BASE = "https://gpsec.goatcounter.com/counter/";  // trailing slash kept
 
   function endpoint(path) {
-    if (path.charAt(0) !== "/") path = "/" + path;
-    // encode each segment, keep slashes literal
-    var enc = path.split("/").map(encodeURIComponent).join("/");
-    return BASE + enc + ".json";
+    if (path.charAt(0) !== "/") path = "/" + path;       // ensure leading slash
+    return BASE + path + ".json";                         // -> /counter//writing/...
   }
 
   function load(el, path) {
