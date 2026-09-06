@@ -35,7 +35,7 @@
   <div class="wrap article-inner">
     <a class="back" href="../notes.html">Back to all notes</a>
 
-    <p class="dateline">27 July 2026 · notes · <span id="views-here" class="views"></span></p>
+    <p class="dateline">27 July 2026 · notes · <span class="views" data-views-here>–</span> views</p>
     <h1>What OSCP really taught me, and what I wasted time on</h1>
 
     <p>
@@ -248,24 +248,7 @@
   window.addEventListener('scroll',onScroll,{passive:true});onScroll();
 })();
 </script>
-<script>
-(function(){
-  var el=document.getElementById('views-here'); if(!el) return;
-  var t=setInterval(function(){
-    if(window.goatcounter && window.goatcounter.visit_count){
-      clearInterval(t);
-      window.goatcounter.visit_count({
-        append:'#views-here',
-        type:'html',
-        no_branding:true,
-        attr:{'style':'all:unset'},
-        style:'#gcvc-for{display:none} #gcvc{border:none!important;background:none!important;padding:0!important;margin:0!important;color:#3F9C86!important;font-family:IBM Plex Mono,monospace!important;font-size:.78rem!important} #gcvc-views{color:#3F9C86!important;font-weight:400!important}'
-      });
-    }
-  },100);
-  setTimeout(function(){clearInterval(t)},12000);
-})();
-</script>
 <script data-goatcounter="https://gpsec.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+<script src="../views.js" defer></script>
 </body>
 </html>
