@@ -28,10 +28,6 @@
       api(p, "views", "POST", function (c) { here.textContent = c; });
     }
   }
-  // cards: read-only view counts
-  document.querySelectorAll("[data-views-path]").forEach(function (el) {
-    api(el.getAttribute("data-views-path"), "views", "GET", function (c) { el.textContent = c; });
-  });
 
   // ---- LIKES ----
   var likeBtn = document.querySelector("[data-like]");
