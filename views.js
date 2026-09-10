@@ -1,6 +1,6 @@
 /* gp_sec views + likes — talks to the Cloudflare Worker. */
 (function () {
-  var WORKER = "https://gpsec-views.bgowriprasad.workers.dev";
+  var WORKER = "https://views.gowriprasad.in";
   if (WORKER.indexOf("REPLACE") !== -1) return;
 
   function api(path, kind, method, cb) {
